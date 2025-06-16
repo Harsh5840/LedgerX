@@ -18,6 +18,15 @@ importers:
         specifier: 5.8.2
         version: 5.8.2
 
+  packages/ai:
+    dependencies:
+      '@ledgerX/core':
+        specifier: workspace:*
+        version: link:../core
+      '@repo/typescript-config':
+        specifier: workspace:*
+        version: link:../typescript-config
+
   packages/core:
     dependencies:
       '@repo/typescript-config':
