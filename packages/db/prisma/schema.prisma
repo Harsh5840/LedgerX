@@ -41,8 +41,8 @@ model LedgerEntry {
   prevHash      String?
   isReversal    Boolean     @default(false)
   originalHash  String?
-  category      String?
-  flagged       Boolean     @default(false)
+  category      String?   // For fraud detection
+  flagged       Boolean     @default(false)  // For fraud detection
   riskScore     Float?      // For fraud detection
 }
 
