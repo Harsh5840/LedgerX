@@ -16,6 +16,7 @@ export interface LedgerEntry {
     prevHash?: string;
     isReversal?: boolean;
     originalHash?: string;
+    category?: string;
   }
   
 
@@ -112,4 +113,8 @@ export function reverseTransaction(original: Transaction): Transaction {
         debit: reversedDebit,
         credit: reversedCredit
       };
+    }
+
+    export function isSuspicious(entry: LedgerEntry): boolean {
+        return entry.amount > 50000;
     }
