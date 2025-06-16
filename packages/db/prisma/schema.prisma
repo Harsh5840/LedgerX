@@ -1,0 +1,64 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id         String      @id @default(uuid())
+  email      String      @unique
+  name       String?
+  role       Role        @default(USER)
+  accounts   Account[]
+  entries    LedgerEntry[]
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+}
+
+model Account {
+  id         String        @id @default(uuid())
+  name       String
+  type       AccountType
+  userId     String
+  user       User          @relation(fields: [userId], references: [id])
+  entries    LedgerEntry[]
+  createdAt  DateTime      @default(now())
+}
+
+model LedgerEntry {
+  id            String      @id @default(uuid())
+  accountId     String
+  account       Account     @relation(fields: [accountId], references: [id])
+  userId        String
+  user          User        @relation(fields: [userId], references: [id])
+  type          EntryType   // 'debit' | 'credit'
+  amount        Float
+  timestamp     DateTime    @default(now())
+  hash          String
+  prevHash      String?
+  isReversal    Boolean     @default(false)
+  originalHash  String?
+  category      String?
+  flagged       Boolean     @default(false)
+  riskScore     Float?      // For fraud detection
+}
+
+enum Role {
+  USER
+  ADMIN
+  AUDITOR
+}
+
+enum AccountType {
+  WALLET
+  SAVINGS
+  BUSINESS
+}
+
+enum EntryType {
+  debit
+  credit
+}
