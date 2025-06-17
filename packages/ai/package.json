@@ -13,7 +13,11 @@
   "license": "ISC",
   "dependencies": {
     "@ledgerX/core": "workspace:*",
+    "@repo/db": "workspace:*",
     "@repo/typescript-config": "workspace:*",
-    "@repo/db": "workspace:*"
+    "dotenv": "^16.5.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.3"
   }
 }

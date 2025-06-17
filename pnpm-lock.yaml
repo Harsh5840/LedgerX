@@ -29,6 +29,13 @@ importers:
       '@repo/typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
+      dotenv:
+        specifier: ^16.5.0
+        version: 16.5.0
+    devDependencies:
+      '@types/node':
+        specifier: ^24.0.3
+        version: 24.0.3
 
   packages/core:
     dependencies:
@@ -226,6 +233,9 @@ packages:
 
   '@types/node@24.0.2':
     resolution: {integrity: sha512-Kv1shWMfCUnzbQTosAHrF2p8AzccoLODqJ0XqGPRA/mGVZR86KCk8I+fyh6B5+kcLtAKS9BquXUxVO79jU9UGg==}
+
+  '@types/node@24.0.3':
+    resolution: {integrity: sha512-R4I/kzCYAdRLzfiCabn9hxWfbuHS573x+r0dJMkkzThEa7pbrcDWK+9zu3e7aBOouf+rQAciqPFMnxwr0aWgKg==}
 
   '@typescript-eslint/eslint-plugin@8.33.0':
     resolution: {integrity: sha512-CACyQuqSHt7ma3Ns601xykeBK/rDeZa3w6IS6UtMQbixO5DWy+8TilKkviGDH6jtWCo8FGRKEK5cLLkPvEammQ==}
@@ -1300,6 +1310,10 @@ snapshots:
   '@types/json-schema@7.0.15': {}
 
   '@types/node@24.0.2':
+    dependencies:
+      undici-types: 7.8.0
+
+  '@types/node@24.0.3':
     dependencies:
       undici-types: 7.8.0
 

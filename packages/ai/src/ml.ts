@@ -1,11 +1,11 @@
 // ml.ts (production-safe with Hugging Face Inference API)
-import type { LedgerEntryInput } from "@repo/core/src/types";
+import type { LedgerEntryInput } from "@ledgerX/core";
 
 const HUGGINGFACE_API_TOKEN = process.env.HUGGINGFACE_API_TOKEN!;
 const endpoint = "https://api-inference.huggingface.co/models/facebook/bart-large-mnli";
 
 const categories = [
-  "food",
+  "food",   
   "transport",
   "housing",
   "entertainment",
