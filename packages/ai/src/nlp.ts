@@ -8,7 +8,7 @@ interface NLPQuery {   //NLPQuery is a type that represents the query that the u
     limit?: number;  //limit is the limit of the query
 }
 
-export function parseUserQuery(question: string): NLPQuery {
+export function parseQuery(question: string): NLPQuery {
     const lower = question.toLowerCase();
     const now = new Date();
 
@@ -24,9 +24,9 @@ export function parseUserQuery(question: string): NLPQuery {
         return {
             intent: "TOTAL_SPENT",
             filters: {
-                category,
-                month: monthIndex,
-                year: now.getFullYear(),
+                category, //for example: "food"
+                month: monthIndex, //for example: 0
+                year: now.getFullYear(), //for example: 2025
             },
         };
     }

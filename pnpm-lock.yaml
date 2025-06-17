@@ -23,6 +23,9 @@ importers:
       '@ledgerX/core':
         specifier: workspace:*
         version: link:../core
+      '@repo/db':
+        specifier: workspace:*
+        version: link:../db
       '@repo/typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
