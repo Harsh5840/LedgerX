@@ -23,7 +23,7 @@ importers:
       '@ledgerX/core':
         specifier: workspace:*
         version: link:../core
-      '@repo/db':
+      '@ledgerX/db':
         specifier: workspace:*
         version: link:../db
       '@repo/typescript-config':
@@ -61,6 +61,9 @@ importers:
 
   packages/db:
     dependencies:
+      '@ledgerX/core':
+        specifier: workspace:*
+        version: link:../core
       '@prisma/client':
         specifier: ^6.9.0
         version: 6.9.0(prisma@6.9.0(typescript@5.8.3))(typescript@5.8.3)
