@@ -1,11 +1,11 @@
-// ml.ts (production-safe with Hugging Face Inference API)
+import axios from "axios";
 import type { LedgerEntryInput } from "@ledgerX/core";
 
 const HUGGINGFACE_API_TOKEN = process.env.HUGGINGFACE_API_TOKEN!;
 const endpoint = "https://api-inference.huggingface.co/models/facebook/bart-large-mnli";
 
 const categories = [
-  "food",   
+  "food",
   "transport",
   "housing",
   "entertainment",
@@ -19,33 +19,35 @@ const categories = [
 ];
 
 /**
- * Classify transaction text using Hugging Face API
- * @param entry LedgerEntryInput
- * @returns Predicted category
+ * Classifies a ledger entry into a spending category using Hugging Face Zero-Shot Classification.
+ * 
+ * @param entry LedgerEntryInput - The user's transaction input (text or structured data).
+ * @returns Predicted category as a string.
  */
 export async function classifyCategory(entry: LedgerEntryInput): Promise<string> {
   const inputText = typeof entry.data === "string" ? entry.data : JSON.stringify(entry.data);
 
-  const response = await fetch(endpoint, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${HUGGINGFACE_API_TOKEN}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      inputs: inputText,
-      parameters: {
-        candidate_labels: categories,
-        multi_label: false
+  try {
+    const response = await axios.post(
+      endpoint,
+      {
+        inputs: inputText,
+        parameters: {
+          candidate_labels: categories,
+          multi_label: false
+        }
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${HUGGINGFACE_API_TOKEN}`,
+          "Content-Type": "application/json"
+        }
       }
-    })
-  });
+    );
 
-  if (!response.ok) {
-    console.error("Failed to fetch from Hugging Face API:", await response.text());
+    return response.data?.labels?.[0] || "others";
+  } catch (error: any) {
+    console.error("Hugging Face API error:", error.response?.data || error.message);
     return "others";
   }
-
-  const result = await response.json();
-  return result?.labels?.[0] || "others";
 }

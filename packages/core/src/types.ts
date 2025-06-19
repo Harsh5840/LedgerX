@@ -5,7 +5,7 @@ export interface LedgerEntryInput {
 };
   
 export interface LedgerEntry {
-    account: string;
+    account: string;  // account name like "Cash" or "Bank" or "Salary" or "Rent" or "Food" or "Entertainment" or "Other"
     userId: string;
     type: 'debit' | 'credit';
     amount: number;
