@@ -64,7 +64,6 @@ export async function getTopCategories(userId: string, limit = 5) {
     .slice(0, limit);
 }
 
-
 export async function getAllTransactions(userId: string) {
   return await prisma.ledgerEntry.findMany({
     where: { userId },

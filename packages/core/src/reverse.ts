@@ -1,7 +1,7 @@
 import { createEntry } from './ledger';
 import { Transaction } from './types';
 
-export function reverseTransaction(original: Transaction): Transaction {
+export async function reverseTransaction(original: Transaction): Promise<Transaction> {
   const { debit, credit } = original;
 
   const reversedDebit = createEntry({
@@ -21,11 +21,10 @@ export function reverseTransaction(original: Transaction): Transaction {
     amount: credit.amount,
     isReversal: true,
     originalHash: credit.hash,
-    prevHash: reversedDebit.hash
+    prevHash: (await reversedDebit).hash,
   }, new Date().toISOString());
-
   return {
-    debit: reversedDebit,
-    credit: reversedCredit,
+    debit: await reversedDebit,
+    credit: await reversedCredit,
   };
 }
