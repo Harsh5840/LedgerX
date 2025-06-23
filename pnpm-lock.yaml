@@ -20,6 +20,9 @@ importers:
 
   apps/ledgerX-backend:
     dependencies:
+      '@ledgerX/ai':
+        specifier: workspace:*
+        version: link:../../packages/ai
       '@ledgerX/core':
         specifier: workspace:*
         version: link:../../packages/core

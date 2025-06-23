@@ -12,6 +12,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@ledgerX/ai": "workspace:*",
     "@ledgerX/core": "workspace:*",
     "@ledgerX/db": "workspace:*",
     "@repo/typescript-config": "workspace:*",

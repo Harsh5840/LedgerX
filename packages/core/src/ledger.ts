@@ -44,7 +44,7 @@ export async function createTransaction(input: TransactionInput): Promise<Transa
       userId,
       type: 'debit',
       amount,
-      prevHash,
+      prevHash
     },
     timestamp
   );

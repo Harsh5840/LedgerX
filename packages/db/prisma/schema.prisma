@@ -16,7 +16,24 @@ model User {
   entries    LedgerEntry[]
   createdAt  DateTime    @default(now())
   updatedAt  DateTime    @updatedAt
+  transactions Transaction[]
 }
+
+model Transaction {
+  id         String   @id @default(uuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id])
+  amount     Float
+  category   String?
+  timestamp  DateTime
+  riskScore  Int
+  isFlagged  Boolean
+  reasons    String?
+  parentId   String?
+  createdAt  DateTime  @default(now())
+}
+
+
 
 model Account {
   id         String        @id @default(uuid())

@@ -43,7 +43,7 @@ async function handleSpendingSummary(
     },
   });
 
-  const total = entries.reduce((sum, entry) => sum + entry.amount, 0);  //the reduce function is used to sum up the amount of the entries
+  const total = entries.reduce((sum: number, entry: any) => sum + entry.amount, 0);  //the reduce function is used to sum up the amount of the entries
 
   return `You spent ₹${total} on ${filters.category || "all categories"} in ${startDate.toLocaleString('default', { month: 'long' })}.`;
 }
