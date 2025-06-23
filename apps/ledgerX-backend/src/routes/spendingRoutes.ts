@@ -5,7 +5,7 @@ import {
   getUserTransactions,
 } from '../controllers/spendingController';
 
-const router = Router();
+const router: Router = Router();
 
 // GET /spending/total?userId=123&month=6&category=food
 router.get('/total', getUserSpending);

@@ -20,6 +20,12 @@ importers:
 
   apps/ledgerX-backend:
     dependencies:
+      '@ledgerX/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@ledgerX/db':
+        specifier: workspace:*
+        version: link:../../packages/db
       '@repo/typescript-config':
         specifier: workspace:*
         version: link:../../packages/typescript-config
