@@ -1,19 +1,31 @@
-import { Router } from 'express';
+import express, { RequestHandler, Router }   from 'express';
 import {
-  getUserSpending,
-  getUserTopCategories,
-  getUserTransactions,
+  getTotalSpending,
+  getTopCategories,
+  getAllTransactions,
 } from '../controllers/spendingController';
+  import { authenticateJWT } from '../middleware/authMiddleware';
+import { requireRole } from '../middleware/roleMiddleware';
 
-const router: Router = Router();
+const router: Router = express.Router();
 
-// GET /spending/total?userId=123&month=6&category=food
-router.get('/total', getUserSpending);
+// Auth middleware for all routes
+router.use(authenticateJWT as RequestHandler);
 
-// GET /spending/top?userId=123&limit=5
-router.get('/top', getUserTopCategories);
+/**
+ * GET /spending/total/:userId
+ * Optional query params: category, month
+ */
+  router.get('/total/:userId', requireRole('USER', 'ADMIN') as RequestHandler, getTotalSpending as RequestHandler);
 
-// GET /spending/all?userId=123
-router.get('/all', getUserTransactions);
+/**
+ * GET /spending/top-categories/:userId
+ */
+router.get('/top-categories/:userId', requireRole('USER', 'ADMIN') as RequestHandler, getTopCategories as RequestHandler);
+
+/**
+ * GET /spending/all/:userId
+ */
+router.get('/all/:userId', requireRole('USER', 'ADMIN') as RequestHandler, getAllTransactions as RequestHandler);
 
 export default router;

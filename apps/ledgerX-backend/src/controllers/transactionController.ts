@@ -47,4 +47,4 @@ export const handleTotalSpending = async (req: Request, res: Response) => {
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch total spending' });
   }
-};
+}; 

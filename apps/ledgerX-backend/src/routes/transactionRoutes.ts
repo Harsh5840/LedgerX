@@ -1,23 +1,31 @@
-import { Router } from 'express';
-import {
-  handleCreateTransaction,
-  handleGetAllTransactions,
-  handleTopCategories,
-  handleTotalSpending,
-} from '../controllers/transactionController';
+import express, { RequestHandler, Router } from 'express';
+import * as controller from '../controllers/transactionController';
+import { requireRole } from '../middleware/roleMiddleware';
+import { authenticateJWT } from '../middleware/authMiddleware';
 
-const router: Router = Router();
+const router: Router = express.Router();
 
-// POST /transactions -> Create new debit-credit transaction
-router.post('/', handleCreateTransaction);
+router.use(authenticateJWT as RequestHandler); // apply to all routes
 
-// GET /transactions/:userId -> Get all transactions for a user
-router.get('/:userId', handleGetAllTransactions);
-
-// GET /transactions/:userId/top-categories?limit=5 -> Top spending categories
-router.get('/:userId/top-categories', handleTopCategories);
-
-// GET /transactions/:userId/total-spending?category=food&month=6 -> Total spending
-router.get('/:userId/total-spending', handleTotalSpending);
+router.post(
+  '/create',
+  requireRole('USER', 'ADMIN') as RequestHandler,
+  controller.handleCreateTransaction as RequestHandler
+);
+router.get(
+  '/all/:userId',
+  requireRole('USER', 'ADMIN') as RequestHandler,
+  controller.handleGetAllTransactions as RequestHandler
+);
+router.get(
+  '/spending/:userId',
+  requireRole('USER', 'ADMIN') as RequestHandler,
+  controller.handleTotalSpending as RequestHandler
+);
+router.get(
+  '/top-categories/:userId',
+  requireRole('USER', 'ADMIN') as RequestHandler,
+  controller.handleTopCategories as RequestHandler
+);
 
 export default router;

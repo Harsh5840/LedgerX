@@ -2,7 +2,11 @@
     "extends": "@repo/typescript-config/base.json",
     "compilerOptions": {
         "outDir": "./dist",
-        "rootDir": "./src"
+        "rootDir": "./src",
+        "types": ["express"],
+        "typeRoots": ["./node_modules/@types", "./src/types"],
+        "moduleResolution": "node",
+        "module": "commonjs"
     },
     "include": ["src/**/*"],  // include all files in the src directory
     "exclude": ["node_modules", "dist"]
