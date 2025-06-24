@@ -1,8 +1,6 @@
-// apps/backend/src/services/transactionService.ts
-
 import { prisma } from "@ledgerx/db";
-import { LedgerEntry, reverseTransaction as reverseCore } from "@ledgerx/core";
-import { analyzeFraud } from "./fraudService.js";
+import { LedgerEntry } from "@ledgerx/core";
+import { analyzeFraud } from "./fraudService";
 
 /**
  * Create a transaction and persist to DB with fraud analysis
@@ -28,8 +26,9 @@ export async function createTransaction(entry: LedgerEntry) {
 /**
  * Return all transactions ordered by most recent
  */
-export async function getAllTransactions() {
+export async function getAllTransactions(userId: string) {
   return await prisma.transaction.findMany({
+    where: { userId },
     orderBy: {
       timestamp: "desc",
     },
@@ -46,6 +45,15 @@ export async function reverseTransaction(transactionId: string) {
 
   if (!original) throw new Error("Transaction not found");
 
+  const alreadyReversed = await prisma.transaction.findFirst({
+    where: { parentId: transactionId },
+  });
+  if (alreadyReversed) throw new Error("Transaction already reversed");
+
+  const age = Date.now() - new Date(original.timestamp).getTime();
+  const maxDays = 30 * 24 * 60 * 60 * 1000;
+  if (age > maxDays) throw new Error("Transaction too old to reverse");
+
   const reversed = {
     userId: original.userId,
     amount: -original.amount,
@@ -57,7 +65,5 @@ export async function reverseTransaction(transactionId: string) {
     parentId: original.id,
   };
 
-  return await prisma.transaction.create({
-    data: reversed,
-  });
+  return await prisma.transaction.create({ data: reversed });
 }

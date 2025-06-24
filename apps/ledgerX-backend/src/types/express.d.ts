@@ -7,6 +7,7 @@ declare module 'express' {
       id: string;
       role: 'USER' | 'ADMIN' | 'AUDITOR';
       [key: string]: any;  
+      email?: string;
     };
   }
 }
