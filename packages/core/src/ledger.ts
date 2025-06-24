@@ -1,6 +1,6 @@
 import * as crypto from 'crypto';
 import { LedgerEntry, LedgerEntryInput, Transaction, TransactionInput } from './types';
-import { classifyCategory } from '@ledgerX/ai/src/ml';
+
 
     
 export function generateHash(entry: LedgerEntryInput): string {
@@ -10,8 +10,9 @@ export function generateHash(entry: LedgerEntryInput): string {
 
 
 export async function createEntry(
-  entry: Omit<LedgerEntry, 'hash' | 'timestamp' | 'category'>,
-  timestamp: string
+  entry: Omit<LedgerEntry, 'hash' | 'timestamp' >,
+  timestamp: string,
+  category: string
 ): Promise<LedgerEntry> {
   const input: LedgerEntryInput = {
     data: entry.account,  // assuming 'account' is the best field to describe the entry
@@ -21,7 +22,6 @@ export async function createEntry(
 
   const hash = generateHash(input);
 
-  const category = await classifyCategory(input);
 
   return {
     ...entry,
@@ -34,8 +34,10 @@ export async function createEntry(
 /**
  * Creates a debit-credit transaction with linked hashes and category classification.
  */
-export async function createTransaction(input: TransactionInput): Promise<Transaction> {
-  const { userId, from, to, amount, prevHash } = input;
+export async function createTransaction(
+  input: TransactionInput & { debitCategory: string; creditCategory: string }
+): Promise<Transaction> {
+  const { userId, from, to, amount, prevHash, debitCategory, creditCategory } = input;
   const timestamp = new Date().toISOString();
 
   const debit = await createEntry(
@@ -46,7 +48,8 @@ export async function createTransaction(input: TransactionInput): Promise<Transa
       amount,
       prevHash
     },
-    timestamp
+    timestamp,
+    debitCategory
   );
 
   const credit = await createEntry(
@@ -57,7 +60,8 @@ export async function createTransaction(input: TransactionInput): Promise<Transa
       amount,
       prevHash: debit.hash,
     },
-    timestamp
+    timestamp,
+    creditCategory
   );
 
   return { debit, credit };

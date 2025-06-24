@@ -1,6 +1,11 @@
 import { Request, Response } from 'express';
 import { createTransaction as buildLedgerTxn } from '@ledgerx/core';
-import { createTransaction as persistEntry, getAllTransactions, reverseTransaction } from '../services/transactionService';
+import {
+  createTransaction as persistEntry,
+  getAllTransactions,
+  reverseTransaction,
+} from '../services/transactionService';
+import { classifyCategory } from '@ledgerx/ai/src/ml';
 
 /**
  * Create a new transaction with linked debit/credit entries.
@@ -8,8 +13,21 @@ import { createTransaction as persistEntry, getAllTransactions, reverseTransacti
 export const handleCreateTransaction = async (req: Request, res: Response) => {
   try {
     const input = req.body;
-    const tx = await buildLedgerTxn(input);
 
+    // Classify categories using AI with proper LedgerEntryInput
+    const debitCategory = await classifyCategory({ data: `${input.from} ${input.description}`, timestamp: new Date().toISOString() });
+    const creditCategory = await classifyCategory({
+      data: `${input.to} ${input.description}`, timestamp: new Date().toISOString()
+    });
+
+    // Build ledger transaction
+    const tx = await buildLedgerTxn({
+      ...input,
+      debitCategory,
+      creditCategory,
+    });
+
+    // Persist debit and credit entries
     await persistEntry(tx.debit);
     await persistEntry(tx.credit);
 
