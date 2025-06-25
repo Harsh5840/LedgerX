@@ -54,6 +54,14 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     <div className="min-h-screen bg-background">
       {/* Mobile sidebar */}
       <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
+        <SheetTrigger asChild>
+          <Button
+            variant="outline"
+            className="lg:hidden fixed left-4 top-4 z-40"
+          >
+            <Menu className="h-4 w-4" />
+          </Button>
+        </SheetTrigger>
         <SheetContent side="left" className="w-64 p-0">
           <div className="flex h-full flex-col">
             <div className="flex h-16 shrink-0 items-center border-b px-6">
@@ -129,11 +137,41 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       <div className="lg:pl-64">
         {/* Top bar */}
         <div className="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8">
-          <SheetTrigger asChild>
-            <Button variant="outline" size="icon" className="lg:hidden">
-              <Menu className="h-4 w-4" />
-            </Button>
-          </SheetTrigger>
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button variant="outline" size="icon" className="lg:hidden">
+                <Menu className="h-4 w-4" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left" className="w-64 p-0">
+              <div className="flex h-full flex-col">
+                <div className="flex h-16 shrink-0 items-center border-b px-6">
+                  <h1 className="text-xl font-bold gradient-text">FinLedger</h1>
+                </div>
+                <nav className="flex-1 space-y-1 p-4">
+                  {allNavigation.map((item) => {
+                    const isActive = pathname === item.href;
+                    return (
+                      <Link
+                        key={item.name}
+                        href={item.href}
+                        onClick={() => setSidebarOpen(false)}
+                        className={cn(
+                          "flex items-center rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                          isActive
+                            ? "bg-primary text-primary-foreground"
+                            : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                        )}
+                      >
+                        <item.icon className="mr-3 h-4 w-4" />
+                        {item.name}
+                      </Link>
+                    );
+                  })}
+                </nav>
+              </div>
+            </SheetContent>
+          </Sheet>
 
           <div className="flex flex-1 gap-x-4 self-stretch lg:gap-x-6">
             <div className="flex flex-1"></div>
