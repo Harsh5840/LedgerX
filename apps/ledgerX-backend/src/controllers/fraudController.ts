@@ -1,7 +1,7 @@
 // apps/backend/src/controllers/fraudController.ts
 
 import { Request, Response } from "express";
-import { analyzeFraud } from "../services/fraudService.js";
+import { analyzeFraud } from "../services/fraudService";
 
 export const handleFraudCheck = async (req: Request, res: Response) => {
   try {
