@@ -105,7 +105,7 @@ export default function Transactions() {
     }
   };
 
-  const categories = [...new Set(mockTransactions.map(tx => tx.category))];
+  const categories = Array.from(new Set(mockTransactions.map(tx => tx.category)));
 
   return (
     <DashboardLayout>
