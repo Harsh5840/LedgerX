@@ -1,20 +1,39 @@
 'use client';
 
 import { useState } from 'react';
-import { TRANSACTION_CATEGORIES } from '@/types/transaction';
+import { TRANSACTION_CATEGORIES, TransactionCategory } from '@/types/transaction';
 import { useTransactions } from '@/hooks/use-transactions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger
+} from '@/components/ui/dialog';
 import { Plus, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 export function CreateTransaction() {
   const [open, setOpen] = useState(false);
   const { createTransaction } = useTransactions();
-  const [formData, setFormData] = useState({
+
+  const [formData, setFormData] = useState<{
+    fromAccount: string;
+    toAccount: string;
+    amount: string;
+    description: string;
+    category: TransactionCategory;
+  }>({
     fromAccount: '',
     toAccount: '',
     amount: '',
@@ -24,8 +43,7 @@ export function CreateTransaction() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Validate inputs
+
     if (!formData.fromAccount.trim()) {
       toast.error('From account is required');
       return;
@@ -55,6 +73,7 @@ export function CreateTransaction() {
         description: formData.description.trim(),
         category: formData.category
       });
+
       setOpen(false);
       setFormData({
         fromAccount: '',
@@ -65,9 +84,9 @@ export function CreateTransaction() {
       });
     } catch (error) {
       console.error('Transaction creation failed:', error);
-      // Error is already handled by the mutation's onError callback
     }
   };
+
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -122,7 +141,7 @@ export function CreateTransaction() {
           </div>
           <div className="space-y-2">
             <Label htmlFor="category">Category</Label>
-            <Select value={formData.category} onValueChange={(value) => setFormData({ ...formData, category: value })}>
+            <Select value={formData.category} onValueChange={(value) => setFormData({ ...formData, category: value as TransactionCategory })}>
               <SelectTrigger>
                 <SelectValue placeholder="Select a category" />
               </SelectTrigger>

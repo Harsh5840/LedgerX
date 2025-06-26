@@ -1,3 +1,6 @@
+
+import { Transaction, LedgerEntry } from "@ledgerx/db";
+
 export const TRANSACTION_CATEGORIES = [
   'food',
   'transport',
@@ -14,20 +17,16 @@ export const TRANSACTION_CATEGORIES = [
 
 
 
+export type DualEntryTransaction = Transaction & {
+  debit: LedgerEntry;
+  credit: LedgerEntry;
+};
+
+
 export type TransactionCategory = typeof TRANSACTION_CATEGORIES[number];
 
-export interface Transaction {
-  id: string;
-  userId: string;
-  amount: number;
-  category: string;
-  timestamp: string;
-  riskScore: number;
-  isFlagged: boolean;
-  reasons?: string;
-  parentId?: string;
-  createdAt: string;
-}
+
+export type { Transaction, LedgerEntry };
 
 export interface CreateTransactionInput {
   amount: number;

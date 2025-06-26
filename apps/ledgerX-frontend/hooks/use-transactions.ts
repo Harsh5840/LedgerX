@@ -3,7 +3,7 @@ import axios from 'axios';
 import { Transaction, CreateTransactionInput, TransactionResponse } from '@/types/transaction';
 import { toast } from 'sonner';
 
-export function useTransactions(searchTerm?: string, categoryFilter?: string) {
+export function useTransactions(searchTerm?: string, categoryFilter?: string) { //this function is used to get all transactions
   const queryClient = useQueryClient();
 
   const { data: transactions, isLoading, error } = useQuery<Transaction[]>({    
@@ -22,7 +22,11 @@ export function useTransactions(searchTerm?: string, categoryFilter?: string) {
       if (categoryFilter && categoryFilter !== 'all') params.append('category', categoryFilter);
 
       try {
-        const response = await axios.get(`${process.env.BACKEND_URL}/api/transactions?${params.toString()}`);
+        const backendUrl = "https://localhost:5000";
+        if (!backendUrl) {
+          throw new Error('BACKEND_URL environment variable is not set');
+        }
+        const response = await axios.get(`${backendUrl}/api/transactions/all?${params.toString()}`);
         if (!response.data) {
           throw new Error('No data received from server');
         }

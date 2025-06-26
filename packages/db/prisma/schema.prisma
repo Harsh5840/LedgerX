@@ -32,6 +32,7 @@ model Transaction {
   reasons    String?
   parentId   String?
   createdAt  DateTime  @default(now())
+  ledgerEntries LedgerEntry[]
 }
 
 
@@ -62,6 +63,8 @@ model LedgerEntry {
   category      String?   // For fraud detection
   flagged       Boolean     @default(false)  // For fraud detection
   riskScore     Float?      // For fraud detection
+  transactionId String
+  transaction   Transaction @relation(fields: [transactionId], references: [id])
 }
 
 enum Role {

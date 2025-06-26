@@ -27,13 +27,26 @@ export async function createTransaction(entry: LedgerEntry) {
  * Return all transactions ordered by most recent
  */
 export async function getAllTransactions(userId: string) {
-  return await prisma.transaction.findMany({
+  const transactions = await prisma.transaction.findMany({
     where: { userId },
-    orderBy: {
-      timestamp: "desc",
+    orderBy: { timestamp: "desc" },
+    include: {
+      ledgerEntries: true,
     },
   });
+
+  return transactions.map((txn) => {
+    const debit = txn.ledgerEntries.find((e) => e.type === "debit");
+    const credit = txn.ledgerEntries.find((e) => e.type === "credit");
+
+    return {
+      ...txn,
+      debit,
+      credit,
+    };
+  });
 }
+
 
 /**
  * Reverse a transaction logically (creates a reversal record)

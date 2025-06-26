@@ -6,20 +6,7 @@ export interface User {
   image?: string;
 }
 
-export interface Transaction {
-  id: string;
-  fromAccount: string;
-  toAccount: string;
-  amount: number;
-  category: string;
-  description: string;
-  timestamp: string;
-  hash: string;
-  previousHash?: string;
-  reversed?: boolean;
-  reversedBy?: string;
-  reversedAt?: string;
-}
+
 
 export interface Analytics {
   totalSpendThisMonth: number;
