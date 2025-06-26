@@ -71,7 +71,7 @@ const mockTransactions = [
 export default function Transactions() {
   const { data: session } = useSession();
   const [searchTerm, setSearchTerm] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState("all");
+  const [categoryFilter, setCategoryFilter] = useState("");
   const [selectedTransaction, setSelectedTransaction] = useState(null);
 
   const isAdmin = (session?.user as any)?.role === "ADMIN";
@@ -88,7 +88,7 @@ export default function Transactions() {
           tx.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
           tx.hash.includes(searchTerm);
         
-        const matchesCategory = categoryFilter === "all" || tx.category === categoryFilter;
+        const matchesCategory = categoryFilter === "" || tx.category === categoryFilter;
         
         return matchesSearch && matchesCategory;
       });
@@ -147,7 +147,7 @@ export default function Transactions() {
                   <SelectValue placeholder="Filter by category" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Categories</SelectItem>
+                  <SelectItem value="">All Categories</SelectItem>
                   {categories.map(category => (
                     <SelectItem key={category} value={category}>
                       {category}
@@ -155,12 +155,12 @@ export default function Transactions() {
                   ))}
                 </SelectContent>
               </Select>
-              {(searchTerm || categoryFilter !== "all") && (
+              {(searchTerm || categoryFilter) && (
                 <Button 
                   variant="outline" 
                   onClick={() => {
                     setSearchTerm("");
-                    setCategoryFilter("all");
+                    setCategoryFilter("");
                   }}
                 >
                   Clear
