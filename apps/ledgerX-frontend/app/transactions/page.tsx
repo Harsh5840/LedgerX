@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useTransactions } from "@/hooks/use-transactions";
 import { motion } from "framer-motion";
 import { DashboardLayout } from "@/components/layout/dashboard-layout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,61 +12,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Search, Filter, RotateCcw, Eye, Plus, ArrowUpDown } from "lucide-react";
+import { Search, Filter, RotateCcw, Eye, Plus } from "lucide-react";
+import { CreateTransaction } from "@/components/transactions/create-transaction";
 import { format } from "date-fns";
 import { useSession } from "next-auth/react";
 import { toast } from "sonner";
 import Link from "next/link";
+import { TRANSACTION_CATEGORIES } from "@/types/transaction";
 
 // Mock data
-const mockTransactions = [
-  {
-    id: "1",
-    fromAccount: "Checking Account",
-    toAccount: "Coffee Shop",
-    amount: -4.50,
-    category: "Food & Dining",
-    description: "Morning coffee",
-    timestamp: "2024-01-15T08:30:00Z",
-    hash: "a1b2c3d4e5f6789",
-    reversed: false,
-  },
-  {
-    id: "2", 
-    fromAccount: "Salary Account",
-    toAccount: "Checking Account",
-    amount: 2500.00,
-    category: "Income",
-    description: "Monthly salary",
-    timestamp: "2024-01-15T00:00:00Z",
-    hash: "f6e5d4c3b2a1098",
-    reversed: false,
-  },
-  {
-    id: "3",
-    fromAccount: "Checking Account", 
-    toAccount: "Amazon",
-    amount: -89.99,
-    category: "Shopping",
-    description: "Electronics purchase",
-    timestamp: "2024-01-14T16:45:00Z",
-    hash: "9z8y7x6w5v4u321",
-    reversed: false,
-  },
-  {
-    id: "4",
-    fromAccount: "Checking Account",
-    toAccount: "Gas Station",
-    amount: -55.20,
-    category: "Transportation",
-    description: "Fuel",
-    timestamp: "2024-01-14T12:20:00Z", 
-    hash: "u4v5w6x7y8z9012",
-    reversed: true,
-    reversedBy: "admin@example.com",
-    reversedAt: "2024-01-14T18:00:00Z",
-  },
-];
+
 
 export default function Transactions() {
   const { data: session } = useSession();
@@ -76,36 +31,11 @@ export default function Transactions() {
 
   const isAdmin = (session?.user as any)?.role === "ADMIN";
 
-  const { data: transactions, isLoading } = useQuery({
-    queryKey: ["transactions", searchTerm, categoryFilter],
-    queryFn: async () => {
-      // Simulate API call with filters
-      await new Promise(resolve => setTimeout(resolve, 500));
-      return mockTransactions.filter(tx => {
-        const matchesSearch = searchTerm === "" || 
-          tx.fromAccount.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          tx.toAccount.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          tx.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          tx.hash.includes(searchTerm);
-        
-        const matchesCategory = categoryFilter === "" || tx.category === categoryFilter;
-        
-        return matchesSearch && matchesCategory;
-      });
-    },
-  });
+  const { transactions, isLoading, error, reverseTransaction } = useTransactions(searchTerm, categoryFilter);
 
-  const handleReverseTransaction = async (transactionId: string) => {
-    try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      toast.success("Transaction reversed successfully");
-    } catch (error) {
-      toast.error("Failed to reverse transaction");
-    }
+  const handleReverseTransaction = async (transactionHash: string) => {
+    await reverseTransaction.mutateAsync(transactionHash);
   };
-
-  const categories = Array.from(new Set(mockTransactions.map(tx => tx.category)));
 
   return (
     <DashboardLayout>
@@ -124,7 +54,6 @@ export default function Transactions() {
             </Button>
           </Link>
         </div>
-
         {/* Filters */}
         <Card>
           <CardHeader>
@@ -132,40 +61,43 @@ export default function Transactions() {
           </CardHeader>
           <CardContent>
             <div className="flex flex-col sm:flex-row gap-4">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search transactions, accounts, or hash..."
-                  className="pl-10"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
+              <div className="flex flex-1 items-center space-x-2">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    placeholder="Search transactions, accounts, or hash..."
+                    className="pl-10"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </div>
+                <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                  <SelectTrigger className="w-full sm:w-[200px]">
+                    <Filter className="mr-2 h-4 w-4" />
+                    <SelectValue placeholder="Filter by category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Categories</SelectItem>
+                    {TRANSACTION_CATEGORIES.map(category => (
+                      <SelectItem key={category} value={category}>
+                        {category}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {(searchTerm || categoryFilter !== "all") && (
+                  <Button 
+                    variant="outline" 
+                    onClick={() => {
+                      setSearchTerm("");
+                      setCategoryFilter("all");
+                    }}
+                  >
+                    Clear
+                  </Button>
+                )}
               </div>
-              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                <SelectTrigger className="w-full sm:w-[200px]">
-                  <Filter className="mr-2 h-4 w-4" />
-                  <SelectValue placeholder="Filter by category" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="">All Categories</SelectItem>
-                  {categories.map(category => (
-                    <SelectItem key={category} value={category}>
-                      {category}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {(searchTerm || categoryFilter) && (
-                <Button 
-                  variant="outline" 
-                  onClick={() => {
-                    setSearchTerm("");
-                    setCategoryFilter("");
-                  }}
-                >
-                  Clear
-                </Button>
-              )}
+              <CreateTransaction />
             </div>
           </CardContent>
         </Card>
@@ -182,7 +114,8 @@ export default function Transactions() {
             {isLoading ? (
               <div className="flex items-center justify-center py-8">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-              </div>
+              <CreateTransaction />
+            </div>
             ) : (
               <Table>
                 <TableHeader>
