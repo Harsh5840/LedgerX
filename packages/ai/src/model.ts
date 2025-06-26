@@ -8,7 +8,7 @@ export async function mlRiskScore(entry: LedgerEntry): Promise<number> {  // we 
 
   if (entry.amount > 100000) score += 50;
 
-  if (!entry.category || entry.category === "other") score += 20;
+  if (!entry.category || entry.category === "others") score += 20;
 
   const hour = new Date(entry.timestamp).getHours();
   if (hour < 6 || hour > 22) score += 15;

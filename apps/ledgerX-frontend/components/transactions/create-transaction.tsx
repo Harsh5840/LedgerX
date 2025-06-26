@@ -8,27 +8,65 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Plus } from 'lucide-react';
+import { Plus, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 export function CreateTransaction() {
   const [open, setOpen] = useState(false);
   const { createTransaction } = useTransactions();
   const [formData, setFormData] = useState({
-    from: '',
-    to: '',
+    fromAccount: '',
+    toAccount: '',
     amount: '',
     description: '',
-    category: '',
+    category: TRANSACTION_CATEGORIES[0]
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await createTransaction.mutateAsync({
-      ...formData,
-      amount: parseFloat(formData.amount),
-    });
-    setOpen(false);
-    setFormData({ from: '', to: '', amount: '', description: '' , category: ''});
+    
+    // Validate inputs
+    if (!formData.fromAccount.trim()) {
+      toast.error('From account is required');
+      return;
+    }
+    if (!formData.toAccount.trim()) {
+      toast.error('To account is required');
+      return;
+    }
+    if (!formData.amount || parseFloat(formData.amount) <= 0) {
+      toast.error('Amount must be greater than 0');
+      return;
+    }
+    if (!formData.description.trim()) {
+      toast.error('Description is required');
+      return;
+    }
+    if (formData.fromAccount === formData.toAccount) {
+      toast.error('From and To accounts must be different');
+      return;
+    }
+
+    try {
+      await createTransaction.mutateAsync({
+        fromAccount: formData.fromAccount.trim(),
+        toAccount: formData.toAccount.trim(),
+        amount: parseFloat(formData.amount),
+        description: formData.description.trim(),
+        category: formData.category
+      });
+      setOpen(false);
+      setFormData({
+        fromAccount: '',
+        toAccount: '',
+        amount: '',
+        description: '',
+        category: TRANSACTION_CATEGORIES[0]
+      });
+    } catch (error) {
+      console.error('Transaction creation failed:', error);
+      // Error is already handled by the mutation's onError callback
+    }
   };
 
   return (
@@ -47,18 +85,18 @@ export function CreateTransaction() {
           <div className="space-y-2">
             <Label htmlFor="from">From Account</Label>
             <Input
-              id="from"
-              value={formData.from}
-              onChange={(e) => setFormData({ ...formData, from: e.target.value })}
+              id="fromAccount"
+              value={formData.fromAccount}
+              onChange={(e) => setFormData({ ...formData, fromAccount: e.target.value })}
               required
             />
           </div>
           <div className="space-y-2">
             <Label htmlFor="to">To Account</Label>
             <Input
-              id="to"
-              value={formData.to}
-              onChange={(e) => setFormData({ ...formData, to: e.target.value })}
+              id="toAccount"
+              value={formData.toAccount}
+              onChange={(e) => setFormData({ ...formData, toAccount: e.target.value })}
               required
             />
           </div>
@@ -108,8 +146,16 @@ export function CreateTransaction() {
             <Button
               type="submit"
               disabled={createTransaction.isPending}
+              className="min-w-[100px]"
             >
-              {createTransaction.isPending ? 'Creating...' : 'Create'}
+              {createTransaction.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Creating...
+                </>
+              ) : (
+                'Create'
+              )}
             </Button>
           </div>
         </form>

@@ -33,8 +33,14 @@ export default function Transactions() {
 
   const { transactions, isLoading, error, reverseTransaction } = useTransactions(searchTerm, categoryFilter);
 
-  const handleReverseTransaction = async (transactionHash: string) => {
-    await reverseTransaction.mutateAsync(transactionHash);
+  const handleReverseTransaction = async (transactionId: string) => {
+    try {
+      await reverseTransaction.mutateAsync(transactionId);
+      toast.success('Transaction reversed successfully');
+    } catch (error) {
+      console.error('Transaction reversal failed:', error);
+      toast.error('Failed to reverse transaction. Please try again.');
+    }
   };
 
   return (
@@ -111,11 +117,62 @@ export default function Transactions() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {isLoading ? (
+            {error ? (
+              <div className="flex flex-col items-center justify-center py-8 text-center">
+                <div className="text-red-500 mb-2">
+                  <svg
+                    className="h-8 w-8 mx-auto mb-2"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                  <p className="text-sm text-muted-foreground">{(error as Error).message}</p>
+                </div>
+                <Button
+                  variant="outline"
+                  onClick={() => window.location.reload()}
+                  className="mt-4"
+                >
+                  Try Again
+                </Button>
+              </div>
+            ) : isLoading ? (
               <div className="flex items-center justify-center py-8">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
               <CreateTransaction />
             </div>
+            ) : !transactions?.length ? (
+              <div className="flex flex-col items-center justify-center py-8 text-center">
+                <div className="text-muted-foreground mb-2">
+                  <svg
+                    className="h-8 w-8 mx-auto mb-2"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                    />
+                  </svg>
+                  <p>No transactions found</p>
+                  {(searchTerm || categoryFilter !== 'all') && (
+                    <p className="text-sm mt-2">
+                      Try adjusting your search or filter criteria
+                    </p>
+                  )}
+                </div>
+                <CreateTransaction />
+              </div>
             ) : (
               <Table>
                 <TableHeader>
@@ -243,8 +300,16 @@ export default function Transactions() {
                                   <AlertDialogAction
                                     className="bg-red-500 hover:bg-red-600"
                                     onClick={() => handleReverseTransaction(transaction.id)}
+                                    disabled={reverseTransaction.isPending}
                                   >
-                                    Reverse Transaction
+                                    {reverseTransaction.isPending ? (
+                                      <>
+                                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                                        Reversing...
+                                      </>
+                                    ) : (
+                                      'Reverse Transaction'
+                                    )}
                                   </AlertDialogAction>
                                 </AlertDialogFooter>
                               </AlertDialogContent>

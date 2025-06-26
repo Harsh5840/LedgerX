@@ -25,7 +25,7 @@ model Transaction {
   userId     String
   user       User     @relation(fields: [userId], references: [id])
   amount     Float
-  category   String?
+  category   String?  // For AI categorization
   timestamp  DateTime
   riskScore  Int
   isFlagged  Boolean

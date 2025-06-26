@@ -23,12 +23,17 @@ const mockMonthlyData = [
 ];
 
 const mockCategoryData = [
-  { name: "Food & Dining", value: 3200, color: "#3B82F6", trend: 12 },
-  { name: "Shopping", value: 2800, color: "#10B981", trend: -5 },
-  { name: "Transportation", value: 1600, color: "#F59E0B", trend: 8 },
-  { name: "Entertainment", value: 1200, color: "#EF4444", trend: 15 },
-  { name: "Bills & Utilities", value: 1800, color: "#8B5CF6", trend: 2 },
-  { name: "Healthcare", value: 850, color: "#F97316", trend: -12 },
+  { name: "food", value: 3200, color: "#3B82F6", trend: 12 },
+  { name: "shopping", value: 2400, color: "#EF4444", trend: -5 },
+  { name: "transport", value: 1600, color: "#F59E0B", trend: 8 },
+  { name: "entertainment", value: 1200, color: "#10B981", trend: 15 },
+  { name: "utilities", value: 1800, color: "#8B5CF6", trend: 2 },
+  { name: "health", value: 850, color: "#F97316", trend: -12 },
+  { name: "housing", value: 2000, color: "#6366F1", trend: 0 },
+  { name: "travel", value: 1500, color: "#EC4899", trend: 20 },
+  { name: "education", value: 1000, color: "#14B8A6", trend: 5 },
+  { name: "investment", value: 3000, color: "#64748B", trend: 18 },
+  { name: "others", value: 500, color: "#9CA3AF", trend: 0 },
 ];
 
 const mockRiskData = [

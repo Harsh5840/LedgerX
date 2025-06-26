@@ -18,7 +18,7 @@ export async function analyzeFraud(entry: LedgerEntry): Promise<{
     reasons.push("High transaction amount");
   }
 
-  if (!entry.category || entry.category === "other") {
+  if (!entry.category || entry.category === "others") {
     reasons.push("Uncategorized transaction");
   }
 

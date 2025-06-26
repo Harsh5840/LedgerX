@@ -17,6 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { CheckCircle, CreditCard, ArrowRight, Brain } from "lucide-react";
 import { toast } from "sonner";
+import { TRANSACTION_CATEGORIES } from '@/types/transaction';
 
 const transactionSchema = z.object({
   fromAccount: z.string().min(1, "From account is required"),
@@ -66,30 +67,30 @@ export default function NewTransaction() {
   });
 
   const classifyTransaction = async (description: string, amount: string) => {
-    // Simulate AI classification
-    const categories = [
-      "Food & Dining",
-      "Shopping",
-      "Transportation", 
-      "Entertainment",
-      "Bills & Utilities",
-      "Healthcare",
-      "Income",
-      "Transfer",
-    ];
-    
     // Simple mock logic based on description
-    let category = "Other";
+    let category = "others";
     const desc = description.toLowerCase();
     
     if (desc.includes("coffee") || desc.includes("restaurant") || desc.includes("food")) {
-      category = "Food & Dining";
+      category = "food";
     } else if (desc.includes("amazon") || desc.includes("shopping") || desc.includes("store")) {
-      category = "Shopping";
+      category = "shopping";
     } else if (desc.includes("gas") || desc.includes("uber") || desc.includes("transport")) {
-      category = "Transportation";
-    } else if (desc.includes("salary") || desc.includes("payment") && Number(amount) > 0) {
-      category = "Income";
+      category = "transport";
+    } else if (desc.includes("rent") || desc.includes("mortgage")) {
+      category = "housing";
+    } else if (desc.includes("movie") || desc.includes("game")) {
+      category = "entertainment";
+    } else if (desc.includes("doctor") || desc.includes("medicine") || desc.includes("healthcare")) {
+      category = "health";
+    } else if (desc.includes("electricity") || desc.includes("water") || desc.includes("internet")) {
+      category = "utilities";
+    } else if (desc.includes("flight") || desc.includes("hotel")) {
+      category = "travel";
+    } else if (desc.includes("tuition") || desc.includes("course") || desc.includes("book")) {
+      category = "education";
+    } else if (desc.includes("stock") || desc.includes("bond") || desc.includes("crypto")) {
+      category = "investment";
     }
     
     return category;
