@@ -1,49 +1,65 @@
-import { Request, Response } from 'express';
-import { LedgerEntry } from '@ledgerX/core/src/types';
-import { prisma } from '@ledgerX/db';
-import { createTransaction } from '@ledgerX/core';
-import { addTransaction } from '@ledgerX/db';
 
-/**
- * Reverse a transaction by original hash.
- */
+
+import { Request, Response } from 'express';
+import { prisma, TransactionRepo } from '@ledgerX/db';
+import { createTransaction } from '@ledgerX/core';
+
 export const handleReversal = async (req: Request, res: Response) => {
   try {
     const { originalHash } = req.params;
 
-    // Fetch the original debit and credit entries
     const entries = await prisma.ledgerEntry.findMany({
-      where: { hash: originalHash },
+      where: { hash: originalHash }
     });
 
     if (entries.length === 0) {
       return res.status(404).json({ error: 'Original transaction not found' });
     }
 
-    const [original] = entries;
+    const original = entries[0]; // Not destructured
 
-    const reversalTx = await createTransaction({
+if (!original) {
+  return res.status(404).json({ error: 'Original transaction not found' });
+}
+
+    const isCredit = original.type === 'credit';
+    const isDebit = original.type === 'debit';
+
+    const reversed = await createTransaction({
       userId: original.userId,
-      from: original.type === 'credit' ? original.accountId : '',  // reverse credit
-      to: original.type === 'debit' ? original.accountId : '',     // reverse debit
+      from: isCredit ? original.accountId : '',
+      to: isDebit ? original.accountId : '',
       amount: original.amount,
       prevHash: original.hash,
-      isReversal: true,
-      originalHash: original.hash,
+      debitCategory: original.category ?? undefined,
+      creditCategory: original.category ?? undefined,
     });
 
-    // Manually add reversal markers
-    const reversed = {
-      ...reversalTx,
-      debit: { ...reversalTx.debit, isReversal: true, originalHash: original.hash },
-      credit: { ...reversalTx.credit, isReversal: true, originalHash: original.hash },
-    };
+    // Add reversal metadata
+    reversed.debit.isReversal = true;
+    reversed.debit.originalHash = original.hash;
+    reversed.credit.isReversal = true;
+    reversed.credit.originalHash = original.hash;
 
-    await addTransaction(reversed);
+    // Optional: propagate riskScore/flags if needed
+    reversed.debit.riskScore = 0;
+    reversed.credit.riskScore = 0;
+    reversed.debit.isSuspicious = false;
+    reversed.credit.isSuspicious = false;
 
-    res.status(200).json({ message: 'Transaction reversed successfully', reversed });
+    // Store in DB
+    const tx = await TransactionRepo.addTransactionFromCore({
+      ...reversed,
+      reasons: 'Reversal',
+      parentId: original.transactionId,
+    });
+
+    return res.status(200).json({
+      message: 'Transaction reversed successfully',
+      reversed: tx,
+    });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Failed to reverse transaction' });
+    console.error('Reversal Error:', error);
+    return res.status(500).json({ error: 'Failed to reverse transaction' });
   }
 };

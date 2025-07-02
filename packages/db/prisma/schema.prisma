@@ -27,13 +27,15 @@ model Transaction {
   amount        Float
   category      String?
   timestamp     DateTime
-  riskScore     Float?         // 🔁 changed from Int
+  riskScore     Float?
   isFlagged     Boolean
   reasons       String?
-  parentId      String?
   description   String?
   createdAt     DateTime       @default(now())
   ledgerEntries LedgerEntry[]
+  parentId      String?
+  parent        Transaction?   @relation("ReversalLink", fields: [parentId], references: [id])
+  children      Transaction[]  @relation("ReversalLink")
 }
 
 model Account {

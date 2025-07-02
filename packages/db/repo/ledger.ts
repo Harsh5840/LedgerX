@@ -1,19 +1,27 @@
 // db/repo/ledger.ts
 
-import { PrismaClient, Prisma } from "@prisma/client";
+import { PrismaClient, Prisma, LedgerEntry } from "@prisma/client";
 import { Transaction } from "@ledgerX/core/src/types"; // Ideally use a shared types barrel import
 const prisma = new PrismaClient();
 
 /**
  * Add a transaction: atomic debit + credit ledger entries
  */
-export async function addTransaction(tx: Transaction) {
+export async function addTransaction(tx: { debit: LedgerEntry; credit: LedgerEntry }) {
+  const transactionId = tx.debit.transactionId;
+
   await prisma.$transaction([
     prisma.ledgerEntry.create({
-      data: tx.debit as unknown as Prisma.LedgerEntryUncheckedCreateInput,
+      data: {
+        ...tx.debit,
+        transactionId,
+      } as Prisma.LedgerEntryUncheckedCreateInput,
     }),
     prisma.ledgerEntry.create({
-      data: tx.credit as unknown as Prisma.LedgerEntryUncheckedCreateInput,
+      data: {
+        ...tx.credit,
+        transactionId,
+      } as Prisma.LedgerEntryUncheckedCreateInput,
     }),
   ]);
 }
@@ -85,8 +93,9 @@ export async function getTopCategories(
  * Get all ledger entries for a user
  */
 export async function getAllTransactions(userId: string) {
-  return await prisma.ledgerEntry.findMany({
-    where: { userId },
-    orderBy: { timestamp: "desc" },
-  });
+ return await prisma.ledgerEntry.findMany({
+  where: { userId },
+  include: { transaction: true },
+  orderBy: { timestamp: "desc" },
+});
 }

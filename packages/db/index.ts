@@ -11,4 +11,5 @@ export * from '@prisma/client';
 export * as LedgerRepo from './repo/ledger';
 export * as TransactionRepo from './repo/transaction';
 export * as AccountRepo from './repo/account'; // if you have account logic
+export {addTransaction} from './repo/ledger'; // if you have a specific function to export
 

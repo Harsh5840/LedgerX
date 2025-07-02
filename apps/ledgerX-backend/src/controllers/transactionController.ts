@@ -14,59 +14,61 @@ export const handleCreateTransaction = async (req: Request, res: Response) => {
   try {
     const input = req.body;
 
-    // Classify categories using AI with proper LedgerEntryInput
-    const debitCategory = await classifyCategory({ data: `${input.from} ${input.description}`, timestamp: new Date().toISOString() });
-    const creditCategory = await classifyCategory({
-      data: `${input.to} ${input.description}`, timestamp: new Date().toISOString()
-    });
+    // Use AI to classify categories for debit and credit
+    const timestamp = new Date().toISOString();
+    const debitCategory = await classifyCategory({ data: `${input.from} ${input.description}`, timestamp });
+    const creditCategory = await classifyCategory({ data: `${input.to} ${input.description}`, timestamp });
 
-    // Build ledger transaction
+    // Build the transaction using the LedgerX core logic
     const tx = await buildLedgerTxn({
       ...input,
       debitCategory,
       creditCategory,
     });
 
-    // Persist debit and credit entries
+    // Save entries to the database
     await persistEntry(tx.debit);
     await persistEntry(tx.credit);
 
-    res.status(201).json({ message: 'Transaction added successfully', tx });
+    return res.status(201).json({ message: 'Transaction added successfully', tx });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Failed to add transaction' });
+    console.error('Transaction creation failed:', error);
+    return res.status(500).json({ error: 'Failed to add transaction' });
   }
 };
 
 /**
- * Fetch all transactions for a specific user (from JWT).
+ * Fetch all transactions for a specific user (from JWT middleware).
  */
 export const handleGetAllTransactions = async (req: Request, res: Response) => {
   try {
     const { id: userId } = req.user!;
+
     const transactions = await getAllTransactions(userId);
 
     if (!transactions || transactions.length === 0) {
       return res.status(404).json({ message: 'No transactions found for this user' });
     }
 
-    res.json(transactions);
+    return res.json(transactions);
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Failed to fetch transactions' });
+    console.error('Transaction fetch failed:', error);
+    return res.status(500).json({ error: 'Failed to fetch transactions' });
   }
 };
 
 /**
- * Reverse a transaction (admin only).
+ * Reverse a transaction by transaction ID (admin access only).
  */
 export const handleReverseTransaction = async (req: Request, res: Response) => {
   try {
     const { transactionId } = req.params;
+
     const reversal = await reverseTransaction(transactionId as string);
-    res.status(201).json({ message: 'Transaction reversed', reversal });
+
+    return res.status(201).json({ message: 'Transaction reversed', reversal });
   } catch (error) {
-    console.error(error);
-    res.status(400).json({ error: (error as Error).message });
+    console.error('Transaction reversal failed:', error);
+    return res.status(400).json({ error: (error as Error).message });
   }
 };

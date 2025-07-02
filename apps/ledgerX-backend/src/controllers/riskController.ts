@@ -2,12 +2,13 @@
 
 import { Request, Response } from "express";
 import { assessRisk } from "../services/riskService";
+import { LedgerEntryInput } from "../types/types"; // Custom input type without Prisma relations
 
 export const handleRiskAssessment = async (req: Request, res: Response) => {
   try {
-    const entry = req.body; // Make sure this is a valid LedgerEntry
+    const entry: LedgerEntryInput = req.body;
 
-    const result = await assessRisk(entry);
+    const result = await assessRisk(entry );
 
     res.status(200).json({
       success: true,
