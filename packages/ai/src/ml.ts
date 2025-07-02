@@ -4,7 +4,7 @@ import type { LedgerEntryInput } from "@ledgerX/core";
 const HUGGINGFACE_API_TOKEN = process.env.HUGGINGFACE_API_TOKEN!;
 const endpoint = "https://api-inference.huggingface.co/models/facebook/bart-large-mnli";
 
-const categories = [
+export const CATEGORY_LABELS = [
   "food",
   "transport",
   "housing",
@@ -18,14 +18,11 @@ const categories = [
   "others"
 ];
 
-/**
- * Classifies a ledger entry into a spending category using Hugging Face Zero-Shot Classification.
- * 
- * @param entry LedgerEntryInput - The user's transaction input (text or structured data).
- * @returns Predicted category as a string.
- */
+
 export async function classifyCategory(entry: LedgerEntryInput): Promise<string> {
-  const inputText = typeof entry.data === "string" ? entry.data : JSON.stringify(entry.data);
+  const inputText = typeof entry.data === "string"
+    ? entry.data.trim().toLowerCase()
+    : JSON.stringify(entry.data).toLowerCase();
 
   try {
     const response = await axios.post(
@@ -33,7 +30,7 @@ export async function classifyCategory(entry: LedgerEntryInput): Promise<string>
       {
         inputs: inputText,
         parameters: {
-          candidate_labels: categories,
+          candidate_labels: CATEGORY_LABELS,
           multi_label: false
         }
       },
@@ -45,7 +42,11 @@ export async function classifyCategory(entry: LedgerEntryInput): Promise<string>
       }
     );
 
-    return response.data?.labels?.[0] || "others";
+    const topLabel = response.data?.labels?.[0];
+    const topScore = response.data?.scores?.[0];
+
+    if (!topLabel || topScore < 0.5) return "others";
+    return topLabel;
   } catch (error: any) {
     console.error("Hugging Face API error:", error.response?.data || error.message);
     return "others";
