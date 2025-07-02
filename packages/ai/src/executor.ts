@@ -1,6 +1,11 @@
 import { parseQuery } from "./nlp";
 import { prisma } from "@ledgerX/db/src/client";
+import { ruleBasedScore } from "./rules";
+import { mlRiskScore } from "./model";
+import { isolationForestScore } from "./isolation";
+import { LedgerEntry } from "@ledgerx/core";
 
+// --- 1. Handle natural language queries ---
 export async function executeUserQuery(query: string, userId: string) {
   const parsed = parseQuery(query);
 
@@ -24,7 +29,7 @@ async function handleSpendingSummary(
   filters: { category?: string; month?: number; year?: number }
 ) {
   const now = new Date();
-  const month = filters.month !== undefined ? filters.month - 1 : now.getMonth(); // Adjust month index
+  const month = filters.month !== undefined ? filters.month - 1 : now.getMonth(); // month is 0-indexed
   const year = filters.year ?? now.getFullYear();
 
   const startDate = new Date(year, month, 1);
@@ -54,7 +59,7 @@ async function handleTopCategories(
   limit: number
 ) {
   const now = new Date();
-  const month = filters.month !== undefined ? filters.month - 1 : now.getMonth(); // Adjust month index
+  const month = filters.month !== undefined ? filters.month - 1 : now.getMonth();
   const year = filters.year ?? now.getFullYear();
 
   const startDate = new Date(year, month, 1);
@@ -94,4 +99,26 @@ async function handleTopCategories(
   return `Top ${limit} spending categories in ${startDate.toLocaleString('default', {
     month: 'long',
   })}, ${year}:\n` + lines.join("\n");
+}
+
+// --- 2. Evaluate anomaly risk score (for fraud detection) ---
+export async function evaluateAnomaly(entry: LedgerEntry) {
+  const ruleScore = ruleBasedScore(entry);
+  const mlScore = await mlRiskScore(entry);
+  const isoScore = await isolationForestScore(entry);
+
+  const totalScore = (ruleScore + mlScore + isoScore) / 3;
+
+  const riskLevel =
+    totalScore >= 70 ? "high" :
+    totalScore >= 40 ? "medium" :
+    "low";
+
+  return {
+    ruleScore,
+    mlScore,
+    isoScore,
+    totalScore,
+    riskLevel,
+  };
 }

@@ -1,41 +1,64 @@
 import * as crypto from 'crypto';
 import { LedgerEntry, LedgerEntryInput, Transaction, TransactionInput } from './types';
+import { classifyCategory } from '@ledgerX/ai';
+import { ruleBasedScore } from '@ledgerX/ai';
+import { mlRiskScore } from '@ledgerX/ai';
+import { isolationForestScore } from '@ledgerX/ai';
 
-
-    
 export function generateHash(entry: LedgerEntryInput): string {
   const payload = `${JSON.stringify(entry.data)}|${entry.timestamp}|${entry.prevHash || ''}`;
   return crypto.createHash('sha256').update(payload).digest('hex');
 }
 
+async function calculateRiskScore(entry: LedgerEntry): Promise<{ score: number; isSuspicious: boolean }> {
+  const [ruleScore, mlScore, isoScore] = await Promise.all([
+    ruleBasedScore(entry),
+    mlRiskScore(entry),
+    isolationForestScore(entry)
+  ]);
+
+  const totalScore = ruleScore + mlScore + isoScore;
+  return {
+    score: totalScore,
+    isSuspicious: totalScore >= 60,
+  };
+}
 
 export async function createEntry(
-  entry: Omit<LedgerEntry, 'hash' | 'timestamp' >,
+  entry: Omit<LedgerEntry, 'hash' | 'timestamp' | 'category' | 'riskScore' | 'isSuspicious'>,
   timestamp: string,
-  category: string
+  category?: string
 ): Promise<LedgerEntry> {
   const input: LedgerEntryInput = {
-    data: entry.account,  // assuming 'account' is the best field to describe the entry
+    data: entry.account,
     timestamp,
     prevHash: entry.prevHash,
   };
 
+  const classifiedCategory = category ?? (await classifyCategory(input));
   const hash = generateHash(input);
 
-
-  return {
+  const baseEntry: LedgerEntry = {
     ...entry,
     timestamp,
     hash,
-    category,
+    category: classifiedCategory,
+  };
+
+  const { score, isSuspicious } = await calculateRiskScore(baseEntry);
+
+  return {
+    ...baseEntry,
+    riskScore: score,
+    isSuspicious,
   };
 }
 
 /**
- * Creates a debit-credit transaction with linked hashes and category classification.
+ * Creates a debit-credit transaction with classification + scoring.
  */
 export async function createTransaction(
-  input: TransactionInput & { debitCategory: string; creditCategory: string }
+  input: TransactionInput & { debitCategory?: string; creditCategory?: string }
 ): Promise<Transaction> {
   const { userId, from, to, amount, prevHash, debitCategory, creditCategory } = input;
   const timestamp = new Date().toISOString();
@@ -46,7 +69,8 @@ export async function createTransaction(
       userId,
       type: 'debit',
       amount,
-      prevHash
+      prevHash,
+      isReversal: false,
     },
     timestamp,
     debitCategory
@@ -59,6 +83,7 @@ export async function createTransaction(
       type: 'credit',
       amount,
       prevHash: debit.hash,
+      isReversal: false,
     },
     timestamp,
     creditCategory

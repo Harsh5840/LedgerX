@@ -3,3 +3,4 @@ export * from './ml';
 export * from './model';
 export * from './rules';
 export * from './nlp';
+export * from './isolation';
