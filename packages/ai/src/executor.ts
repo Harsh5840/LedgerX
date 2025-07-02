@@ -1,11 +1,11 @@
 import { parseQuery } from "./nlp";
-import { prisma } from "@repo/db/src/client";
-
+import { prisma } from "@ledgerX/db/src/client";
 
 export async function executeUserQuery(query: string, userId: string) {
   const parsed = parseQuery(query);
 
   if (!parsed || parsed.intent === "UNKNOWN") {
+    console.warn(`Unrecognized query from user ${userId}: "${query}"`);
     return "Sorry, I couldn't understand your question.";
   }
 
@@ -13,49 +13,48 @@ export async function executeUserQuery(query: string, userId: string) {
     case "TOTAL_SPENT":
       return await handleSpendingSummary(userId, parsed.filters);
     case "TOP_CATEGORIES":
-      return await handleTopCategories(userId, parsed.filters, parsed.limit || 3);
+      return await handleTopCategories(userId, parsed.filters, parsed.limit ?? 3);
     default:
       return "Sorry, I don't support that type of query yet.";
   }
 }
 
-                            
 async function handleSpendingSummary(
   userId: string,
   filters: { category?: string; month?: number; year?: number }
 ) {
   const now = new Date();
-  const month = filters.month ?? now.getMonth();
+  const month = filters.month !== undefined ? filters.month - 1 : now.getMonth(); // Adjust month index
   const year = filters.year ?? now.getFullYear();
 
-  const startDate = new Date(year, month, 1);  //the 1 is for mentioning the first day of the month
-  const endDate = new Date(year, month + 1, 0);  //the 0 is for mentioning the last day of the month
+  const startDate = new Date(year, month, 1);
+  const endDate = new Date(year, month + 1, 0);
 
-  const entries = await prisma.ledgerEntry.findMany({
+  const { _sum } = await prisma.ledgerEntry.aggregate({
     where: {
       userId,
       type: "debit",
       timestamp: {
-        gte: startDate.toISOString(), //gte is greater than or equal to
-        lte: endDate.toISOString(), //lte is less than or equal to
+        gte: startDate.toISOString(),
+        lte: endDate.toISOString(),
       },
-      ...(filters.category && { category: filters.category }),  //the ...(filters.category && { category: filters.category }) is for mentioning the category of the query
+      ...(filters.category && { category: filters.category }),
     },
+    _sum: { amount: true },
   });
 
-  const total = entries.reduce((sum: number, entry: any) => sum + entry.amount, 0);  //the reduce function is used to sum up the amount of the entries
+  const total = _sum.amount ?? 0;
 
-  return `You spent ₹${total} on ${filters.category || "all categories"} in ${startDate.toLocaleString('default', { month: 'long' })}.`;
+  return `You spent ₹${total} on ${filters.category || "all categories"} in ${startDate.toLocaleString('default', { month: 'long' })}, ${year}.`;
 }
 
-// Handles "Top N categories" query (optional enhancement)
 async function handleTopCategories(
   userId: string,
   filters: { month?: number; year?: number },
   limit: number
 ) {
   const now = new Date();
-  const month = filters.month ?? now.getMonth();
+  const month = filters.month !== undefined ? filters.month - 1 : now.getMonth(); // Adjust month index
   const year = filters.year ?? now.getFullYear();
 
   const startDate = new Date(year, month, 1);
@@ -70,9 +69,13 @@ async function handleTopCategories(
         lte: endDate.toISOString(),
       },
     },
+    select: {
+      category: true,
+      amount: true,
+    },
   });
 
-  const totalsByCategory: Record<string, number> = {};  //the Record<string, number> is used to store the total amount of the categories
+  const totalsByCategory: Record<string, number> = {};
 
   for (const entry of entries) {
     const category = entry.category || "uncategorized";
@@ -88,5 +91,7 @@ async function handleTopCategories(
   }
 
   const lines = top.map(([cat, amt], i) => `${i + 1}. ₹${amt} on ${cat}`);
-  return `Top ${limit} spending categories:\n` + lines.join("\n");
+  return `Top ${limit} spending categories in ${startDate.toLocaleString('default', {
+    month: 'long',
+  })}, ${year}:\n` + lines.join("\n");
 }
