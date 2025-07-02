@@ -1,14 +1,19 @@
 import { prisma } from "@ledgerX/db";
+import { z } from "zod";
 
-type Filters = {
-  userId?: string;
-  category?: string;
-  month?: number;
-  year?: number;
-};
+// ✅ Define Zod schema
+const FiltersSchema = z.object({
+  userId: z.string().optional(),
+  category: z.string().optional(),
+  month: z.number().min(0).max(11).optional(),
+  year: z.number().min(1970).max(2100).optional(),
+});
+
+type Filters = z.infer<typeof FiltersSchema>;
 
 export const getTotalSpendingWithFilters = async (filters: Filters): Promise<number> => {
-  const { userId, category, month, year } = filters;
+  const validated = FiltersSchema.parse(filters);
+  const { userId, category, month, year } = validated;
 
   const where: any = { type: "debit" };
 
@@ -33,7 +38,8 @@ export const getTopCategoriesWithFilters = async (
   filters: Filters,
   limit: number = 3
 ): Promise<{ category: string; total: number }[]> => {
-  const { userId, month, year } = filters;
+  const validated = FiltersSchema.parse(filters);
+  const { userId, month, year } = validated;
 
   const where: any = { type: "debit" };
 
@@ -73,19 +79,17 @@ export const getMonthlySpendingTrend = async (userId: string): Promise<{ month: 
     _sum: { amount: true },
   });
 
-  // Bucket into months manually (Prisma lacks month-grouping)
+  // Bucket into months manually
   const monthTotals: Record<string, number> = {};
 
   for (const entry of results) {
     const date = new Date(entry.timestamp);
     const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
-
     monthTotals[key] = (monthTotals[key] || 0) + (entry._sum.amount || 0);
   }
 
   return Object.entries(monthTotals).map(([month, total]) => ({ month, total }));
 };
-
 
 export const getFlaggedOrRiskyEntries = async (userId: string): Promise<any[]> => {
   return prisma.ledgerEntry.findMany({
