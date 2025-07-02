@@ -8,63 +8,67 @@ datasource db {
 }
 
 model User {
-  id         String      @id @default(uuid())
-  email      String      @unique
-  password   String?
-  name       String?
-  role       Role        @default(USER)
-  accounts   Account[]
-  entries    LedgerEntry[]
-  createdAt  DateTime    @default(now())
-  updatedAt  DateTime    @updatedAt
-  transactions Transaction[]
+  id            String         @id @default(uuid())
+  email         String         @unique
+  password      String?
+  name          String?
+  role          Role           @default(USER)
+  accounts      Account[]
+  entries       LedgerEntry[]
+  transactions  Transaction[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
 }
 
 model Transaction {
-  id         String   @id @default(uuid())
-  userId     String
-  user       User     @relation(fields: [userId], references: [id])
-  amount     Float
-  category   String?  // For AI categorization
-  timestamp  DateTime
-  riskScore  Int
-  isFlagged  Boolean
-  reasons    String?
-  parentId   String?
-  createdAt  DateTime  @default(now())
+  id            String         @id @default(uuid())
+  userId        String
+  user          User           @relation(fields: [userId], references: [id])
+  amount        Float
+  category      String?
+  timestamp     DateTime
+  riskScore     Float?         // 🔁 changed from Int
+  isFlagged     Boolean
+  reasons       String?
+  parentId      String?
+  description   String?
+  createdAt     DateTime       @default(now())
   ledgerEntries LedgerEntry[]
 }
 
-
-
 model Account {
-  id         String        @id @default(uuid())
-  name       String
-  type       AccountType
-  userId     String
-  user       User          @relation(fields: [userId], references: [id])
-  entries    LedgerEntry[]
-  createdAt  DateTime      @default(now())
+  id        String        @id @default(uuid())
+  name      String
+  type      AccountType
+  userId    String
+  user      User          @relation(fields: [userId], references: [id])
+  entries   LedgerEntry[]
+  createdAt DateTime      @default(now())
 }
 
 model LedgerEntry {
-  id            String      @id @default(uuid())
+  id            String        @id @default(uuid())
   accountId     String
-  account       Account     @relation(fields: [accountId], references: [id])
+  account       Account       @relation(fields: [accountId], references: [id])
   userId        String
-  user          User        @relation(fields: [userId], references: [id])
-  type          EntryType   // 'debit' | 'credit'
+  user          User          @relation(fields: [userId], references: [id])
+  type          EntryType
   amount        Float
-  timestamp     DateTime    @default(now())
+  timestamp     DateTime      @default(now())
   hash          String
   prevHash      String?
-  isReversal    Boolean     @default(false)
   originalHash  String?
-  category      String?   // For fraud detection
-  flagged       Boolean     @default(false)  // For fraud detection
-  riskScore     Float?      // For fraud detection
+  isReversal    Boolean       @default(false)
+  category      String?
+  flagged       Boolean       @default(false)
+  riskScore     Float?
+  description   String?
   transactionId String
-  transaction   Transaction @relation(fields: [transactionId], references: [id])
+  transaction   Transaction   @relation(fields: [transactionId], references: [id])
+
+  @@index([userId, category])  
+  @@index([userId, timestamp])
+  @@index([riskScore, flagged])
 }
 
 enum Role {
