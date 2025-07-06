@@ -13,8 +13,8 @@ const reversalSchema = z.object({
   }),
 });
 
-// ✅ Middleware to validate request params using Zod
-const validateReversalParams: RequestHandler = (req, res, next) => {
+// ✅ Middleware to validate request params
+const validateReversalParams = (req: express.Request, res: express.Response, next: express.NextFunction) => {
   const result = reversalSchema.safeParse(req.params);
   if (!result.success) {
     res.status(400).json({ error: result.error.flatten().fieldErrors });
@@ -23,20 +23,23 @@ const validateReversalParams: RequestHandler = (req, res, next) => {
   next();
 };
 
-// Optional: Audit log middleware
+// ✅ Optional audit logging
 const auditLog: RequestHandler = (req, res, next) => {
   console.info(`[AUDIT] User ${req.user?.id} reversed transaction ${req.params.originalHash}`);
   next();
 };
 
-// ✅ POST /reversal/:originalHash/reverse
+// ✅ Route setup
 router.post(
   '/:originalHash/reverse',
   authenticateJWT as RequestHandler,
   requireRole('ADMIN', 'USER') as RequestHandler,
   validateReversalParams,
   auditLog,
-  handleReversal as RequestHandler 
-); 
+  (req, res, next) => {
+    // Ensure TS compatibility without changing controller logic
+    Promise.resolve(handleReversal(req, res)).catch(next);
+  }
+);
 
 export default router;
