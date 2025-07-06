@@ -1,14 +1,18 @@
+// types/express/index.d.ts
 
-import 'express';
+export {};
 
-declare module 'express' {
-  interface Request {
-    user?: {
+declare global {
+  namespace Express {
+    interface User {
       id: string;
-      role: 'USER' | 'ADMIN' | 'AUDITOR';
-      [key: string]: any;  
+      role: "USER" | "ADMIN" | "AUDITOR";
       email?: string;
-    };
+      [key: string]: any;
+    }
+
+    interface Request {
+      user?: User;
+    }
   }
 }
-

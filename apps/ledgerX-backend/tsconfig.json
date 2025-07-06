@@ -4,8 +4,8 @@
     "compilerOptions": {
         "outDir": "./dist",
         "rootDir": "./src",
-        "types": ["express"],
-        "typeRoots": ["./node_modules/@types", "./src/types"],
+        "types": ["node", "express"],
+        "typeRoots": ["./types", "./node_modules/@types"],
         "moduleResolution": "node",
         "module": "commonjs"
     },
