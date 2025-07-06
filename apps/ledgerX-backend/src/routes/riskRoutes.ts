@@ -5,12 +5,13 @@ import { requireRole } from "../middleware/roleMiddleware";
 
 const router: Router = Router();
 
-// POST /api/risk/assess — only accessible to ADMIN and AUDITOR
 router.post(
   "/assess",
   authenticateJWT as RequestHandler,
   requireRole("ADMIN", "AUDITOR") as RequestHandler,
-  handleRiskAssessment as RequestHandler
+  (req, res, next) => {
+    Promise.resolve(handleRiskAssessment(req, res)).catch(next);
+  }
 );
 
 export default router;

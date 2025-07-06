@@ -29,7 +29,6 @@ const auditLog: RequestHandler = (req, res, next) => {
   next();
 };
 
-// ✅ Route setup
 router.post(
   '/:originalHash/reverse',
   authenticateJWT as RequestHandler,
@@ -37,9 +36,9 @@ router.post(
   validateReversalParams,
   auditLog,
   (req, res, next) => {
-    // Ensure TS compatibility without changing controller logic
     Promise.resolve(handleReversal(req, res)).catch(next);
   }
 );
+
 
 export default router;

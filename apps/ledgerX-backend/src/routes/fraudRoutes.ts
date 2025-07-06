@@ -13,7 +13,7 @@ router.post(
   "/check",
   requireRole("ADMIN", "AUDITOR") as RequestHandler,
   validateQuery(fraudCheckSchema) as RequestHandler,
-  handleFraudCheck as RequestHandler
+  handleFraudCheck 
 );
 
 export default router;

@@ -25,7 +25,7 @@ router.get(
   "/total",
   requireRole("USER", "ADMIN") as RequestHandler,
   validateQuery(totalSpendingQuerySchema) as RequestHandler,
-  handleTotalSpending as RequestHandler
+  handleTotalSpending
 );
 
 // GET /analytics/top-categories?userId=...&month=...&year=...&limit=...
@@ -33,7 +33,7 @@ router.get(
   "/top-categories",
   requireRole("USER", "ADMIN") as RequestHandler,
   validateQuery(topCategoriesQuerySchema) as RequestHandler,
-  handleTopCategories as RequestHandler
+  handleTopCategories 
 );
 
 // GET /analytics/monthly-trend?userId=...

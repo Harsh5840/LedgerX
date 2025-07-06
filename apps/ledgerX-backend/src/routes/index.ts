@@ -7,6 +7,8 @@ import fraudRoutes from './fraudRoutes';
 import riskRoutes from './riskRoutes';
 import reversalRoutes from './reversalRoutes';
 import nlpRoutes from './nlpRoutes';
+import userRoutes from './userRoutes';
+
 
 const router : Router = Router();
 
@@ -18,5 +20,7 @@ router.use('/fraud', fraudRoutes);              // /api/fraud
 router.use('/risk', riskRoutes);                // /api/risk
 router.use('/reversal', reversalRoutes);        // /api/reversal
 router.use('/nlp', nlpRoutes);                  // /api/nlp
+router.use('/users', userRoutes);  // /api/users
+
 
 export default router;
