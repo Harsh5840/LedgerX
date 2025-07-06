@@ -2,7 +2,8 @@ import numpy as np
 from datetime import datetime
 
 CATEGORIES = [
-    "groceries", "utilities", "rent", "salary", "travel", "health", "entertainment", "others"
+    "food", "transport", "housing", "entertainment", "shopping",
+    "health", "utilities", "travel", "education", "investment", "others"
 ]
 
 CATEGORY_TO_IDX = {cat: i for i, cat in enumerate(CATEGORIES)}

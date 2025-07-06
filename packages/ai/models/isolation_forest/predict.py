@@ -1,33 +1,37 @@
+# packages/ai/models/isolation_forest/predict.py
+
 import os
 import joblib
 import numpy as np
-from features import transform_entry
+from pathlib import Path
+from .features import transform_entry
 
-MODEL_PATH = os.path.join(os.path.dirname(__file__), "isolation_forest_model.pkl")
+# Define consistent model path (centralized & relative-safe)
+MODEL_PATH = Path(__file__).resolve().parent.parent.parent / "saved_models" / "isolation_forest.pkl"
 
-def load_model():
-    if not os.path.exists(MODEL_PATH):
-        raise FileNotFoundError(f"Model not found at {MODEL_PATH}")
-    return joblib.load(MODEL_PATH)
+# Load once
+if not MODEL_PATH.exists():
+    raise FileNotFoundError(f"Model not found at {MODEL_PATH}")
+model = joblib.load(MODEL_PATH)
 
 def predict(entry: dict) -> dict:
     """
-    Predicts whether a ledger entry is anomalous.
+    Predict anomaly score and label for a given ledger entry.
 
     Args:
-        entry: A ledger entry as a dictionary
+        entry (dict): A single ledger entry.
 
     Returns:
-        Dictionary with:
-            - isAnomaly (bool)
-            - score (float)
+        dict: {
+            "isAnomaly": bool,
+            "score": float
+        }
     """
-    model = load_model()
-    X = np.array([transform_entry(entry)])
-    score = model.decision_function(X)[0]
-    isAnomaly = model.predict(X)[0] == -1
+    features = transform_entry(entry).reshape(1, -1)
+    score = model.decision_function(features)[0]
+    is_anomaly = model.predict(features)[0] == -1
 
     return {
-        "isAnomaly": isAnomaly,
+        "isAnomaly": is_anomaly,
         "score": float(score)
     }

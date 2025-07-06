@@ -6,6 +6,12 @@ node_modules
 .pnp.js
 
 venv
+saved_models
+data
+packages/ai/saved_models
+packages/ai/data
+packages/ai/models/isolation_forest/isolation_forest_model.pkl
+__pycache__
 # Local env files
 .env
 .env.local
