@@ -17,3 +17,4 @@ export interface LedgerEntryInput {
   description?: string | null;
   transactionId: string;
 }
+

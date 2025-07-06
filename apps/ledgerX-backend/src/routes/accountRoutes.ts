@@ -6,17 +6,22 @@ import {
   handleDeleteAccount,
   handleUpdateAccountName,
 } from "../controllers/accountController";
+
 import { authenticateJWT } from "../middleware/authMiddleware";
 import { requireRole } from "../middleware/roleMiddleware";
 
-const router: Router = Router();
+const router:Router = Router();
 
-router.use(authenticateJWT as RequestHandler); // Apply JWT authentication middleware to all routes
+// 🔐 Apply JWT auth to all account routes
+router.use(authenticateJWT as RequestHandler);
 
-router.post("/", requireRole('ADMIN', 'USER') as RequestHandler, handleCreateAccount);  // POST /api/accounts
-router.get("/user/:userId", requireRole('ADMIN', 'USER')  as RequestHandler, handleGetUserAccounts);  // GET /api/accounts/user/:userId
-router.get("/:accountId", requireRole('ADMIN', 'USER') as RequestHandler, handleGetAccountById as RequestHandler);  // GET /api/accounts/:accountId
-router.delete("/:accountId", requireRole('ADMIN', 'USER') as RequestHandler, handleDeleteAccount as RequestHandler);        // DELETE /api/accounts/:accountId
-router.put("/:accountId", requireRole('ADMIN', 'USER') as RequestHandler, handleUpdateAccountName as RequestHandler);       // PUT /api/accounts/:accountId
+// 📦 Accounts CRUD routes (for ADMIN + USER roles)
+const allowedRoles = requireRole("ADMIN", "USER");
+
+router.post("/", allowedRoles as RequestHandler, handleCreateAccount);  // POST /api/accounts
+router.get("/user/:userId", allowedRoles as RequestHandler, handleGetUserAccounts);  // GET /api/accounts/user/:userId
+router.get("/:accountId", allowedRoles as RequestHandler, handleGetAccountById as RequestHandler);  // GET /api/accounts/:accountId
+router.delete("/:accountId", allowedRoles as RequestHandler, handleDeleteAccount);   // DELETE /api/accounts/:accountId
+router.put("/:accountId", allowedRoles as RequestHandler, handleUpdateAccountName);  // PUT /api/accounts/:accountId
 
 export default router;
