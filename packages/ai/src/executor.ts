@@ -2,7 +2,6 @@ import { parseQuery } from "./nlp";
 import { prisma } from "@ledgerX/db/src/client";
 import { ruleBasedScore } from "./rules";
 import { mlRiskScore } from "./model";
-import { isolationForestScore } from "./isolation";
 import { LedgerEntry } from "@ledgerx/core";
 
 // --- 1. Handle natural language queries ---
@@ -105,9 +104,8 @@ async function handleTopCategories(
 export async function evaluateAnomaly(entry: LedgerEntry) {
   const ruleScore = ruleBasedScore(entry);
   const mlScore = await mlRiskScore(entry);
-  const isoScore = await isolationForestScore(entry);
 
-  const totalScore = (ruleScore + mlScore + isoScore) / 3;
+  const totalScore = (ruleScore + mlScore) / 2;
 
   const riskLevel =
     totalScore >= 70 ? "high" :
@@ -117,7 +115,6 @@ export async function evaluateAnomaly(entry: LedgerEntry) {
   return {
     ruleScore,
     mlScore,
-    isoScore,
     totalScore,
     riskLevel,
   };

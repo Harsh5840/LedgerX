@@ -19,7 +19,7 @@ export async function createTransaction(entry: LedgerEntry) {
         timestamp: new Date(entry.timestamp),
         riskScore: Math.floor(fraudResult.riskScore),
         isFlagged: fraudResult.isFlagged,
-        reasons: JSON.stringify(fraudResult.reasons), // ✅ Store as JSON array
+        reasons: JSON.stringify(fraudResult.reasons),
       },
     });
 
@@ -88,7 +88,7 @@ export async function reverseTransaction(transactionId: string) {
       isFlagged: false,
       reasons: JSON.stringify(["Reversal"]),
       parentId: original.id,
-      isReversal: true, // ✅ Added for audit logging
+      isReversal: true,
     };
 
     return await prisma.transaction.create({ data: reversed });
