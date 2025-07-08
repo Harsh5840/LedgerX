@@ -8,19 +8,19 @@ import riskRoutes from './riskRoutes';
 import reversalRoutes from './reversalRoutes';
 import nlpRoutes from './nlpRoutes';
 import userRoutes from './userRoutes';
+import authRoutes from './authRoutes'; // ✅ ADD THIS LINE
 
-
-const router : Router = Router();
+const router: Router = Router();
 
 // Mount all route modules
-router.use('/accounts', accountRoutes);         // /api/accounts
-router.use('/transactions', transactionRoutes); // /api/transactions
-router.use('/analytics', analyticsRoutes);      // /api/analytics
-router.use('/fraud', fraudRoutes);              // /api/fraud
-router.use('/risk', riskRoutes);                // /api/risk
-router.use('/reversal', reversalRoutes);        // /api/reversal
-router.use('/nlp', nlpRoutes);                  // /api/nlp
-router.use('/users', userRoutes);  // /api/users
-
+router.use('/accounts', accountRoutes);
+router.use('/transactions', transactionRoutes);
+router.use('/analytics', analyticsRoutes);
+router.use('/fraud', fraudRoutes);
+router.use('/risk', riskRoutes);
+router.use('/reversal', reversalRoutes);
+router.use('/nlp', nlpRoutes);
+router.use('/users', userRoutes);
+router.use('/auth', authRoutes); // ✅ ADD THIS LINE (/api/auth/google etc.)
 
 export default router;
