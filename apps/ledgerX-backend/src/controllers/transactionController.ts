@@ -7,23 +7,34 @@ import {
 } from '../services/transactionService';
 import { classifyCategory } from '@ledgerx/ai/src/ml';
 
-/**
- * Create a new transaction with linked debit/credit entries.
- */
 export const handleCreateTransaction = async (req: Request, res: Response) => {
   try {
-    const { id: userId } = req.user!; // ✅ assuming JWT middleware set this
+    const { id: userId } = req.user!;
     if (!userId) {
-      return res.status(401).json({ error: 'Unauthorized: User ID not found' });
+      return res.status(401).json({ error: 'Unauthorized: User ID missing' });
     }
+
     const input = req.body;
+    const { description, type } = input;
 
-    // Use AI to classify categories for debit and credit
+    if (!["expense", "income", "transfer"].includes(type)) {
+      return res.status(400).json({ error: "Invalid transaction type" });
+    }
+
     const timestamp = new Date().toISOString();
-    const debitCategory = await classifyCategory({ data: `${input.from} ${input.description}`, timestamp });
-    const creditCategory = await classifyCategory({ data: `${input.to} ${input.description}`, timestamp });
 
-    // Build the transaction using the LedgerX core logic
+    let debitCategory = "others";
+    let creditCategory = "others";
+
+    if (type === "expense") {
+      debitCategory = await classifyCategory({ data: description, timestamp });
+    } else if (type === "income") {
+      creditCategory = await classifyCategory({ data: description, timestamp });
+    } else if (type === "transfer") {
+      debitCategory = "transfer";
+      creditCategory = "transfer";
+    }
+
     const tx = await buildLedgerTxn({
       ...input,
       userId,
@@ -32,7 +43,6 @@ export const handleCreateTransaction = async (req: Request, res: Response) => {
       creditCategory,
     });
 
-    // Save entries to the database
     await persistEntry(tx.debit);
     await persistEntry(tx.credit);
 
