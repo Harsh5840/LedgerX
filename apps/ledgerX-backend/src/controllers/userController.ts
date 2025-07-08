@@ -9,10 +9,14 @@ export const registerUser = async (req: Request, res: Response) => {
   try {
     const { email, password, name, role } = req.body;
 
+    // Check if user already exists
     const existing = await prisma.user.findUnique({ where: { email } });
     if (existing) return res.status(400).json({ error: "User already exists" });
 
+    // Hash the password
     const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Create the user
     const user = await prisma.user.create({
       data: {
         email,
@@ -22,11 +26,29 @@ export const registerUser = async (req: Request, res: Response) => {
       },
     });
 
-    res.status(201).json({ message: "User registered", user: { id: user.id, email: user.email, role: user.role } });
+    // Generate JWT token
+    const token = jwt.sign(
+      { id: user.id, role: user.role },
+      JWT as string,
+      { expiresIn: "7d" }
+    );
+
+    // Return token and user info
+    res.status(201).json({
+      message: "User registered successfully",
+      token,
+      user: {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+      },
+    });
   } catch (err) {
+    console.error("Registration error:", err);
     res.status(500).json({ error: "Registration failed" });
   }
 };
+
 
 export const loginUser = async (req: Request, res: Response) => {
   try {
