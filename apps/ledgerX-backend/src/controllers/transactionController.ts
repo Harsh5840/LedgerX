@@ -12,6 +12,10 @@ import { classifyCategory } from '@ledgerx/ai/src/ml';
  */
 export const handleCreateTransaction = async (req: Request, res: Response) => {
   try {
+    const { id: userId } = req.user!; // ✅ assuming JWT middleware set this
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized: User ID not found' });
+    }
     const input = req.body;
 
     // Use AI to classify categories for debit and credit
@@ -22,6 +26,8 @@ export const handleCreateTransaction = async (req: Request, res: Response) => {
     // Build the transaction using the LedgerX core logic
     const tx = await buildLedgerTxn({
       ...input,
+      userId,
+      timestamp,
       debitCategory,
       creditCategory,
     });

@@ -10,7 +10,6 @@ import {
   classifyCategory,
   ruleBasedScore,
   mlRiskScore,
-  isolationForestScore
 } from '@ledgerX/ai';
 
 /**
@@ -28,13 +27,12 @@ async function calculateRiskScore(entry: LedgerEntry): Promise<{
   score: number;
   isSuspicious: boolean;
 }> {
-  const [ruleScore, mlScore, isoScore] = await Promise.all([
+  const [ruleScore, mlScore] = await Promise.all([
     ruleBasedScore(entry),
     mlRiskScore(entry),
-    isolationForestScore(entry)
   ]);
 
-  const totalScore = ruleScore + mlScore + isoScore;
+  const totalScore = ruleScore + mlScore;
   return {
     score: totalScore,
     isSuspicious: totalScore >= 60

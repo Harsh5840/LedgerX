@@ -1,7 +1,11 @@
 import axios from "axios";
 import type { LedgerEntryInput } from "@ledgerX/core";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 const HUGGINGFACE_API_TOKEN = process.env.HUGGINGFACE_API_TOKEN!;
+console.log("🔑 Hugging Face API token:", HUGGINGFACE_API_TOKEN);
 const endpoint = "https://api-inference.huggingface.co/models/facebook/bart-large-mnli";
 
 export const CATEGORY_LABELS = [

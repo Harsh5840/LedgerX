@@ -2,6 +2,6 @@
 
 import { z } from "zod";
 
-export const nlpQuerySchema = z.object({
-  query: z.string().min(1, "Query must not be empty"),
+export const nlpQuestionSchema = z.object({
+  question: z.string().min(1, "Question must not be empty"),
 });

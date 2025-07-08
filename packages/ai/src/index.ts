@@ -1,3 +1,6 @@
+import dotenv from 'dotenv';
+dotenv.config();
+
 export * from './executor';
 export * from './ml';
 export * from './model';
