@@ -1,7 +1,11 @@
 import { z } from "zod";
 
 export const totalSpendingQuerySchema = z.object({
-  userId: z.string().uuid(),
+  userId: z.coerce
+    .string()
+    .trim()
+    .nonempty({ message: "userId is required" })
+    .uuid({ message: "Invalid UUID format" }),
   category: z.string().optional(),
   month: z
     .string()
@@ -16,7 +20,11 @@ export const totalSpendingQuerySchema = z.object({
 });
 
 export const topCategoriesQuerySchema = z.object({
-  userId: z.string().uuid(),
+  userId: z
+    .string()
+    .trim()
+    .nonempty({ message: "userId is required" })
+    .uuid({ message: "Invalid UUID format" }),
   month: z
     .string()
     .transform(Number)
@@ -35,9 +43,17 @@ export const topCategoriesQuerySchema = z.object({
 });
 
 export const monthlyTrendQuerySchema = z.object({
-  userId: z.string().uuid(),
+  userId: z
+    .string()
+    .trim()
+    .nonempty({ message: "userId is required" })
+    .uuid({ message: "Invalid UUID format" }),
 });
 
 export const flaggedQuerySchema = z.object({
-  userId: z.string().uuid(),
+  userId: z
+    .string()
+    .trim()
+    .nonempty({ message: "userId is required" })
+    .uuid({ message: "Invalid UUID format" }),
 });

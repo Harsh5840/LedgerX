@@ -40,10 +40,10 @@ export const handleCreateTransaction = async (req: Request, res: Response) => {
       userId,
       timestamp,
       debitCategory,
-      creditCategory,
+      creditCategory
     });
 
-    await persistEntry(tx.debit);
+    await persistEntry(tx.debit );
     await persistEntry(tx.credit);
 
     return res.status(201).json({ message: 'Transaction added successfully', tx });

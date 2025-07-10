@@ -24,7 +24,7 @@ router.use(authenticateJWT as RequestHandler);
 router.get(
   "/total",
   requireRole("USER", "ADMIN") as RequestHandler,
-  validateQuery(totalSpendingQuerySchema) as RequestHandler,
+  // validateQuery(totalSpendingQuerySchema) as RequestHandler,
   handleTotalSpending
 );
 

@@ -1,20 +1,12 @@
-// packages/db/repo/transaction.ts
-
 import { prisma } from "../src/client";
 import { EntryType, Prisma } from "@prisma/client";
-import { Transaction as LedgerXTransaction } from "@ledgerX/core"; // Use core-defined type
+import { Transaction as LedgerXTransaction } from "@ledgerX/core";
+import { randomUUID } from "crypto";
 
-/**
- * Maps a LedgerX ledger entry to Prisma-compatible LedgerEntryCreateWithoutTransactionInput
- */
 function mapLedgerEntry(entry: LedgerXTransaction["debit"] | LedgerXTransaction["credit"]): Prisma.LedgerEntryCreateWithoutTransactionInput {
   return {
-    account: {
-      connect: { id: entry.account },
-    },
-    user: {
-      connect: { id: entry.userId },
-    },
+    account: { connect: { id: entry.account } },
+    user: { connect: { id: entry.userId } },
     type: entry.type,
     amount: entry.amount,
     timestamp: new Date(entry.timestamp),
@@ -28,40 +20,39 @@ function mapLedgerEntry(entry: LedgerXTransaction["debit"] | LedgerXTransaction[
   };
 }
 
-/**
- * Adds a transaction from core to the database with ledger entries
- */
 export async function addTransactionFromCore(transaction: LedgerXTransaction & {
   reasons?: string;
   parentId?: string | null;
 }) {
   const { debit, credit } = transaction;
 
-  return prisma.transaction.create({
+  const existing = await prisma.ledgerEntry.findUnique({
+    where: { hash: debit.hash },
+  });
+  if (existing) throw new Error(`Duplicate ledger hash: ${debit.hash}`);
+
+  const created = await prisma.transaction.create({
     data: {
-      user: {
-        connect: { id: debit.userId },
-      },
+      user: { connect: { id: debit.userId } },
       amount: debit.amount,
-      category: debit.category,
+      category: debit.category ?? "others",
       timestamp: new Date(debit.timestamp),
-      riskScore: debit.riskScore,
+      riskScore: debit.riskScore ?? 0,
       isFlagged: debit.isSuspicious ?? false,
-      reasons: transaction.reasons ?? '',
-      parentId: transaction.parentId ?? undefined,
+      reasons: transaction.reasons ?? "",
       ledgerEntries: {
-        create: [
-          mapLedgerEntry(debit),
-          mapLedgerEntry(credit),
-        ],
+        create: [mapLedgerEntry(debit), mapLedgerEntry(credit)],
       },
+      // ...(transaction.parentId ? { parentId: transaction.parentId } : {}),
     },
+  });
+
+  return prisma.transaction.findUnique({
+    where: { id: created.id },
+    include: { ledgerEntries: true },
   });
 }
 
-/**
- * Reverses a transaction by creating a new transaction and inverse ledger entries
- */
 export async function reverseTransaction(transactionId: string) {
   const original = await prisma.transaction.findUnique({
     where: { id: transactionId },
@@ -89,7 +80,7 @@ export async function reverseTransaction(transactionId: string) {
     type: entry.type === EntryType.debit ? EntryType.credit : EntryType.debit,
     amount: entry.amount,
     timestamp: new Date(),
-    hash: `REVERSED-${entry.hash}`, // Optional: you can hash it properly
+    hash: `rev-${entry.hash}-${randomUUID()}`,
     prevHash: entry.hash,
     isReversal: true,
     originalHash: entry.hash,
@@ -103,5 +94,8 @@ export async function reverseTransaction(transactionId: string) {
     reversedEntries.map(data => prisma.ledgerEntry.create({ data }))
   );
 
-  return reversedTx;
+  return prisma.transaction.findUnique({
+    where: { id: reversedTx.id },
+    include: { ledgerEntries: true },
+  });
 }

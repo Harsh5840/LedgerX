@@ -1,88 +1,108 @@
+// src/config/passport.ts
+
 import passport from "passport";
-import {
-  Strategy as GoogleStrategy,
-  Profile as GoogleProfile,
-  StrategyOptions as GoogleStrategyOptions,
-} from "passport-google-oauth20";
-import {
-  Strategy as GitHubStrategy,
-  Profile as GitHubProfile,
-  StrategyOptions as GitHubStrategyOptions,
-} from "passport-github";
-import { prisma, User } from "@ledgerX/db";
+import { Strategy as GoogleStrategy, Profile as GoogleProfile } from "passport-google-oauth20";
+import { Strategy as GitHubStrategy, Profile as GitHubProfile } from "passport-github2";
+import { prisma } from "@ledgerX/db";
+import dotenv from "dotenv";
 
+dotenv.config();
 
-// Google OAuth Strategy
-const googleOptions: GoogleStrategyOptions = {
-  clientID: process.env.GOOGLE_CLIENT_ID!,
-  clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-  callbackURL: "/auth/google/callback",
-};
+interface OAuthUserProfile {
+  id: string;
+  displayName: string;
+  emails?: { value: string }[];
+}
 
+// 🔐 Google Strategy
 passport.use(
   new GoogleStrategy(
-    googleOptions,
-    async (_accessToken: string, _refreshToken: string, profile: GoogleProfile, done) => {
+    {
+      clientID: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+      callbackURL: `${process.env.BACKEND_URL}/api/auth/google/callback`,
+    },
+    async (_accessToken, _refreshToken, profile: GoogleProfile, done) => {
       try {
-        let user = await prisma.user.findUnique({
-          where: { googleId: profile.id },
-        });
+        const email = profile.emails?.[0]?.value;
+        if (!email) return done(new Error("No email from Google"));
+
+        let user = await prisma.user.findUnique({ where: { email } });
 
         if (!user) {
           user = await prisma.user.create({
             data: {
-              name: profile.displayName,
-              email: profile.emails?.[0]?.value || `${profile.id}@google.com`,
-              googleId: profile.id,
-              image: profile.photos?.[0]?.value,
+              email,
+              name: profile.displayName || "Google User",
+              role: "USER",
+              password: null, // password is null for OAuth users
             },
           });
         }
 
         return done(null, user);
       } catch (error) {
-        return done(error);
+        return done(error as Error);
       }
     }
   )
 );
 
-// GitHub OAuth Strategy
-const githubOptions: GitHubStrategyOptions = {
-  clientID: process.env.GITHUB_CLIENT_ID!,
-  clientSecret: process.env.GITHUB_CLIENT_SECRET!,
-  callbackURL: "/auth/github/callback",
-};
+// 🟣 GitHub Strategy
+interface GitHubStrategyOptions {
+  clientID: string;
+  clientSecret: string;
+  callbackURL: string;
+}
+
+interface GitHubVerifyCallback {
+  (
+    accessToken: string,
+    refreshToken: string,
+    profile: GitHubProfile,
+    done: (error: any, user?: any) => void
+  ): Promise<void>;
+}
 
 passport.use(
   new GitHubStrategy(
-    githubOptions,
-    async (_accessToken: string, _refreshToken: string, profile: GitHubProfile, done) => {
+    {
+      clientID: process.env.GITHUB_CLIENT_ID!,
+      clientSecret: process.env.GITHUB_CLIENT_SECRET!,
+      callbackURL: `${process.env.BACKEND_URL}/api/auth/github/callback`,
+    } as GitHubStrategyOptions,
+    (async (
+      _accessToken: string,
+      _refreshToken: string,
+      profile: GitHubProfile,
+      done: (error: any, user?: any) => void
+    ): Promise<void> => {
       try {
-        let user = await prisma.user.findUnique({
-          where: { githubId: profile.id },
-        });
+        const email: string | undefined = profile.emails?.[0]?.value;
+        if (!email) return done(new Error("No email from GitHub"));
+
+        let user = await prisma.user.findUnique({ where: { email } });
 
         if (!user) {
           user = await prisma.user.create({
             data: {
-              name: profile.displayName || profile.username,
-              email: profile.emails?.[0]?.value || `${profile.username}@github.com`,
-              githubId: profile.id,
-              image: profile.photos?.[0]?.value,
+              email,
+              name: profile.displayName || "GitHub User",
+              role: "USER",
+              password: null, // password is null for OAuth users
             },
           });
         }
 
         return done(null, user);
       } catch (error) {
-        return done(error);
+        return done(error as Error);
       }
-    }
+    }) as GitHubVerifyCallback
   )
 );
 
-// Optional — required only if you're using sessions
+// Optional if using sessions (you can remove if using JWTs only)
 passport.serializeUser((user: any, done) => {
   done(null, user.id);
 });
@@ -92,8 +112,6 @@ passport.deserializeUser(async (id: string, done) => {
     const user = await prisma.user.findUnique({ where: { id } });
     done(null, user);
   } catch (error) {
-    done(error, null);
+    done(error);
   }
 });
-
-export default passport;

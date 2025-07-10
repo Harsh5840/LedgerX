@@ -28,12 +28,12 @@ model Transaction {
   userId        String
   user          User           @relation(fields: [userId], references: [id])
   amount        Float
-  category      String?
-  timestamp     DateTime
-  riskScore     Float?
-  isFlagged     Boolean
-  reasons       String?
-  description   String?
+  category      String         @default("others")
+  timestamp     DateTime       @default(now())
+  riskScore     Float?         
+  isFlagged     Boolean        @default(false)
+  reasons       String?        
+  description   String?        
   createdAt     DateTime       @default(now())
   ledgerEntries LedgerEntry[]
   parentId      String?
@@ -60,20 +60,23 @@ model LedgerEntry {
   type          EntryType
   amount        Float
   timestamp     DateTime      @default(now())
-  hash          String
+  hash          String        @unique
   prevHash      String?
   originalHash  String?
   isReversal    Boolean       @default(false)
-  category      String?
+  category      String?       
   flagged       Boolean       @default(false)
-  riskScore     Float?
+  riskScore     Float?        
   description   String?
   transactionId String
-  transaction   Transaction   @relation(fields: [transactionId], references: [id])
+  transaction   Transaction   @relation(fields: [transactionId], references: [id], onDelete: Cascade)
 
   @@index([userId, category])  
   @@index([userId, timestamp])
   @@index([riskScore, flagged])
+  @@index([hash])
+  @@index([originalHash])
+  @@index([prevHash])
 }
 
 enum Role {
