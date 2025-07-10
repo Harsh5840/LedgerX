@@ -31,27 +31,31 @@ export async function addTransactionFromCore(transaction: LedgerXTransaction & {
   });
   if (existing) throw new Error(`Duplicate ledger hash: ${debit.hash}`);
 
-  const created = await prisma.transaction.create({
-    data: {
-      user: { connect: { id: debit.userId } },
-      amount: debit.amount,
-      category: debit.category ?? "others",
-      timestamp: new Date(debit.timestamp),
-      riskScore: debit.riskScore ?? 0,
-      isFlagged: debit.isSuspicious ?? false,
-      reasons: transaction.reasons ?? "",
-      ledgerEntries: {
-        create: [mapLedgerEntry(debit), mapLedgerEntry(credit)],
-      },
-      // ...(transaction.parentId ? { parentId: transaction.parentId } : {}),
+  const txData: Prisma.TransactionCreateInput = {
+    user: { connect: { id: debit.userId } },
+    amount: debit.amount,
+    category: debit.category ?? "others",
+    timestamp: new Date(debit.timestamp),
+    riskScore: debit.riskScore ?? 0,
+    isFlagged: debit.isSuspicious ?? false,
+    reasons: transaction.reasons ?? "",
+    ledgerEntries: {
+      create: [mapLedgerEntry(debit), mapLedgerEntry(credit)],
     },
-  });
+  };
+
+  if (transaction.parentId) {
+    txData.parent = { connect: { id: transaction.parentId } };
+  }
+
+  const created = await prisma.transaction.create({ data: txData });
 
   return prisma.transaction.findUnique({
     where: { id: created.id },
     include: { ledgerEntries: true },
   });
 }
+
 
 export async function reverseTransaction(transactionId: string) {
   const original = await prisma.transaction.findUnique({
@@ -70,7 +74,7 @@ export async function reverseTransaction(transactionId: string) {
       riskScore: 0,
       isFlagged: false,
       reasons: "Reversal",
-      parentId: original.id,
+      parent: { connect: { id: original.id } }, // ✅ Corrected
     },
   });
 
@@ -97,5 +101,27 @@ export async function reverseTransaction(transactionId: string) {
   return prisma.transaction.findUnique({
     where: { id: reversedTx.id },
     include: { ledgerEntries: true },
+  });
+}
+
+export async function getAllTransactions(userId: string) {
+  const transactions = await prisma.transaction.findMany({
+    where: { userId },
+    orderBy: { timestamp: "desc" },
+    include: {
+      ledgerEntries: true,
+    },
+  });
+
+  return transactions.map((txn) => {
+    const debit = txn.ledgerEntries.find((e) => e.type === "debit");
+    const credit = txn.ledgerEntries.find((e) => e.type === "credit");
+
+    return {
+      ...txn,
+      debit,
+      credit,
+      reasons: JSON.parse(txn.reasons ?? "[]"),
+    };
   });
 }

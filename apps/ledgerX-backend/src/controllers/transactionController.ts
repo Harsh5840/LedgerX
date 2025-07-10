@@ -1,11 +1,12 @@
 import { Request, Response } from 'express';
 import { createTransaction as buildLedgerTxn } from '@ledgerx/core';
-import {
-  createTransaction as persistEntry,
-  getAllTransactions,
-  reverseTransaction,
-} from '../services/transactionService';
 import { classifyCategory } from '@ledgerx/ai/src/ml';
+
+import {
+  createTransaction, // ⬅️ PATCHED: new import from shared DB repo
+  reverseTransaction,
+  getAllTransactions, // ✅ Keep if this is still local in services
+} from '../services/transactionService';
 
 export const handleCreateTransaction = async (req: Request, res: Response) => {
   try {
@@ -40,26 +41,22 @@ export const handleCreateTransaction = async (req: Request, res: Response) => {
       userId,
       timestamp,
       debitCategory,
-      creditCategory
+      creditCategory,
     });
 
-    await persistEntry(tx.debit );
-    await persistEntry(tx.credit);
+    // ✅ NEW: Persist using shared database repo
+    const created = await createTransaction(tx);
 
-    return res.status(201).json({ message: 'Transaction added successfully', tx });
+    return res.status(201).json({ message: 'Transaction added successfully', transaction: created });
   } catch (error) {
     console.error('Transaction creation failed:', error);
     return res.status(500).json({ error: 'Failed to add transaction' });
   }
 };
 
-/**
- * Fetch all transactions for a specific user (from JWT middleware).
- */
 export const handleGetAllTransactions = async (req: Request, res: Response) => {
   try {
     const { id: userId } = req.user!;
-
     const transactions = await getAllTransactions(userId);
 
     if (!transactions || transactions.length === 0) {
@@ -73,14 +70,11 @@ export const handleGetAllTransactions = async (req: Request, res: Response) => {
   }
 };
 
-/**
- * Reverse a transaction by transaction ID (admin access only).
- */
 export const handleReverseTransaction = async (req: Request, res: Response) => {
   try {
     const { transactionId } = req.params;
 
-    const reversal = await reverseTransaction(transactionId as string);
+    const reversal = await reverseTransaction(transactionId as string); // ✅ shared DB fn
 
     return res.status(201).json({ message: 'Transaction reversed', reversal });
   } catch (error) {

@@ -1,99 +1,57 @@
 import { prisma } from "@ledgerx/db";
-import { LedgerEntry } from "@ledgerx/core";
-import { analyzeFraud } from "./fraudService";
+import { Transaction as LedgerXTransaction } from "@ledgerX/core";
+import {
+  addTransactionFromCore,
+  reverseTransaction as reverseTxFromDB,
+  getAllTransactions as fetchUserTransactions,
+} from "@ledgerx/db/repo/transaction";
 
 const MAX_REVERSAL_AGE_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
 
 /**
- * Create a transaction and persist to DB with fraud analysis
+ * Create a full transaction with ledger entries
  */
-export async function createTransaction(entry: LedgerEntry) {
-  try {
-    const fraudResult = await analyzeFraud(entry);
-
-    const transaction = await prisma.transaction.create({
-      data: {
-        userId: entry.userId,
-        amount: entry.amount,
-        category: entry.category,
-        timestamp: new Date(entry.timestamp),
-        riskScore: Math.floor(fraudResult.riskScore),
-        isFlagged: fraudResult.isFlagged,
-        reasons: JSON.stringify(fraudResult.reasons),
-      },
-    });
-
-    return transaction;
-  } catch (error) {
-    console.error("Failed to create transaction:", error);
-    throw error;
-  }
+export async function createTransaction(tx: LedgerXTransaction) {
+  return await addTransactionFromCore(tx);
 }
 
 /**
- * Return all transactions ordered by most recent
+ * Fetch all transactions for a user with formatted ledger entries
  */
 export async function getAllTransactions(userId: string) {
-  try {
-    const transactions = await prisma.transaction.findMany({
-      where: { userId },
-      orderBy: { timestamp: "desc" },
-      include: {
-        ledgerEntries: true,
-      },
-    });
+  const transactions = await fetchUserTransactions(userId);
 
-    return transactions.map((txn) => {
-      const debit = txn.ledgerEntries.find((e) => e.type === "debit");
-      const credit = txn.ledgerEntries.find((e) => e.type === "credit");
+  return transactions.map((txn) => {
+    const debit = txn.ledgerEntries.find((e) => e.type === "debit");
+    const credit = txn.ledgerEntries.find((e) => e.type === "credit");
 
-      return {
-        ...txn,
-        debit,
-        credit,
-        reasons: JSON.parse(txn.reasons ?? "[]"),
-      };
-    });
-  } catch (error) {
-    console.error("Failed to fetch transactions:", error);
-    throw error;
-  }
+    return {
+      ...txn,
+      debit,
+      credit,
+      reasons: JSON.parse(txn.reasons ?? "[]"),
+    };
+  });
 }
 
 /**
- * Reverse a transaction logically (creates a reversal record)
+ * Reverse a transaction logically after checking constraints
  */
 export async function reverseTransaction(transactionId: string) {
-  try {
-    const original = await prisma.transaction.findUnique({
-      where: { id: transactionId },
-    });
+  const original = await prisma.transaction.findUnique({
+    where: { id: transactionId },
+    include: { ledgerEntries: true },
+  });
 
-    if (!original) throw new Error("Transaction not found");
+  if (!original) throw new Error("Transaction not found");
 
-    const alreadyReversed = await prisma.transaction.findFirst({
-      where: { parentId: transactionId },
-    });
-    if (alreadyReversed) throw new Error("Transaction already reversed");
+  const alreadyReversed = await prisma.transaction.findFirst({
+    where: { parentId: transactionId },
+  });
+  if (alreadyReversed) throw new Error("Transaction already reversed");
 
-    const age = Date.now() - new Date(original.timestamp).getTime();
-    if (age > MAX_REVERSAL_AGE_MS) throw new Error("Transaction too old to reverse");
+  const age = Date.now() - new Date(original.timestamp).getTime();
+  if (age > MAX_REVERSAL_AGE_MS) throw new Error("Transaction too old to reverse");
 
-    const reversed = {
-      userId: original.userId,
-      amount: -original.amount,
-      category: original.category,
-      timestamp: new Date(),
-      riskScore: 0,
-      isFlagged: false,
-      reasons: JSON.stringify(["Reversal"]),
-      parentId: original.id,
-      isReversal: true,
-    };
-
-    return await prisma.transaction.create({ data: reversed });
-  } catch (error) {
-    console.error("Failed to reverse transaction:", error);
-    throw error;
-  }
+  return await reverseTxFromDB(transactionId);
 }
