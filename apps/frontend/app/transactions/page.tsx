@@ -155,7 +155,6 @@ export default function TransactionsPage() {
           : {
               amount: parseFloat(formData.amount),
               from: formData.from,
-              to: "",
               type: formData.type, // FIXED
               description: formData.description,
               timestamp: formData.timestamp
@@ -207,7 +206,8 @@ export default function TransactionsPage() {
       setError(null)
       const token = localStorage.getItem("token")
       if (!token) {
-        throw new Error("Missing JWT token")
+        console.log("Missing JWT token");
+        throw new Error("Missing JWT token");
       }
 
       const res = await axios.get("http://localhost:5000/api/transactions/all", {
@@ -229,7 +229,7 @@ export default function TransactionsPage() {
       const errorMessage = err.response?.status === 404 
         ? "No transactions found for this user"
         : "Could not fetch transaction data. Please ensure you're logged in."
-      
+      console.log("Error message:", errorMessage)
       setError(errorMessage)
       toast({
         title: "Error loading transactions",
@@ -325,7 +325,13 @@ export default function TransactionsPage() {
     return `${prefix}$${absAmount.toFixed(2)}`
   }
 
-  const uniqueCategories = [...new Set(transactions.map(t => t.type))]
+  const uniqueCategories = [
+    ...new Set(
+      transactions
+        .map(t => t.type)
+        .filter(type => typeof type === "string" && type.trim() !== "")
+    )
+  ];
 
   return (
     <div className="flex h-screen bg-background">
@@ -395,7 +401,9 @@ export default function TransactionsPage() {
                     <SelectItem value="all">All Categories</SelectItem>
                     {uniqueCategories.map(type => (
                       <SelectItem key={type} value={type}>
-                        {type.charAt(0).toUpperCase() + type.slice(1)}
+                        {typeof type === "string"
+                          ? type.charAt(0).toUpperCase() + type.slice(1)
+                          : "Unknown"}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -575,7 +583,7 @@ export default function TransactionsPage() {
                     </SelectTrigger>
                     <SelectContent>
                       {accounts.map((acc: Account) => (
-                        <SelectItem key={acc.id} value={acc.name}>{acc.name} ({acc.type})</SelectItem>
+                        <SelectItem key={acc.id} value={acc.id}>{acc.name} ({acc.type})</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -592,7 +600,7 @@ export default function TransactionsPage() {
                       </SelectTrigger>
                       <SelectContent>
                         {accounts.map((acc: Account) => (
-                          <SelectItem key={acc.id} value={acc.name}>{acc.name} ({acc.type})</SelectItem>
+                          <SelectItem key={acc.id} value={acc.id}>{acc.name} ({acc.type})</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -606,7 +614,7 @@ export default function TransactionsPage() {
                       </SelectTrigger>
                       <SelectContent>
                         {accounts.map((acc: Account) => (
-                          <SelectItem key={acc.id} value={acc.name}>{acc.name} ({acc.type})</SelectItem>
+                          <SelectItem key={acc.id} value={acc.id}>{acc.name} ({acc.type})</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>

@@ -117,11 +117,21 @@ export async function getAllTransactions(userId: string) {
     const debit = txn.ledgerEntries.find((e) => e.type === "debit");
     const credit = txn.ledgerEntries.find((e) => e.type === "credit");
 
+    let reasons: string[] = [];
+    if (txn.reasons && txn.reasons.trim() !== "") {
+      try {
+        const parsed = JSON.parse(txn.reasons);
+        reasons = Array.isArray(parsed) ? parsed : [parsed];
+      } catch {
+        reasons = [txn.reasons];
+      }
+    }
+
     return {
       ...txn,
       debit,
       credit,
-      reasons: JSON.parse(txn.reasons ?? "[]"),
+      reasons,
     };
   });
 }
