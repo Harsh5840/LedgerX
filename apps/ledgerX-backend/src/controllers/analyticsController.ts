@@ -20,7 +20,7 @@ export const handleTotalSpending = async (req: Request, res: Response) => {
 
     res.status(200).json({ success: true, total });
   } catch (error) {
-    console.error("Failed to get total spending:", error);
+    console.error("❌ Failed to get total spending:", error);
     res.status(500).json({ success: false, error: "Internal server error" });
   }
 };
@@ -41,7 +41,7 @@ export const handleTopCategories = async (req: Request, res: Response) => {
 
     res.status(200).json({ success: true, categories });
   } catch (error) {
-    console.error("Failed to get top categories:", error);
+    console.error("❌ Failed to get top categories:", error);
     res.status(500).json({ success: false, error: "Internal server error" });
   }
 };
@@ -50,12 +50,14 @@ export const handleTopCategories = async (req: Request, res: Response) => {
 export const handleMonthlyTrend = async (req: Request, res: Response) => {
   try {
     const { userId } = req.query;
-    if (!userId) return res.status(400).json({ success: false, error: "Missing userId" });
+    if (!userId) {
+      return res.status(400).json({ success: false, error: "Missing userId" });
+    }
 
     const trend = await getMonthlySpendingTrend(userId as string);
     res.status(200).json({ success: true, trend });
   } catch (error) {
-    console.error("Failed to get monthly trend:", error);
+    console.error("❌ Failed to get monthly trend:", error);
     res.status(500).json({ success: false, error: "Internal server error" });
   }
 };
@@ -64,12 +66,14 @@ export const handleMonthlyTrend = async (req: Request, res: Response) => {
 export const handleFlaggedOrRisky = async (req: Request, res: Response) => {
   try {
     const { userId } = req.query;
-    if (!userId) return res.status(400).json({ success: false, error: "Missing userId" });
+    if (!userId) {
+      return res.status(400).json({ success: false, error: "Missing userId" });
+    }
 
     const flagged = await getFlaggedOrRiskyEntries(userId as string);
     res.status(200).json({ success: true, flagged });
   } catch (error) {
-    console.error("Failed to get flagged entries:", error);
+    console.error("❌ Failed to get flagged entries:", error);
     res.status(500).json({ success: false, error: "Internal server error" });
   }
 };

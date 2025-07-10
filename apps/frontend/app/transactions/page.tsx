@@ -142,6 +142,8 @@ export default function TransactionsPage() {
         throw new Error("Missing JWT token");
       }
 
+      const OTHERS_ACCOUNT_ID = "4ff4e73b-16a8-421c-9c64-43e9a49ac1ae";
+
       const payload =
         formData.type === "transfer"
           ? {
@@ -152,13 +154,23 @@ export default function TransactionsPage() {
               description: formData.description,
               timestamp: formData.timestamp
             }
-          : {
-              amount: parseFloat(formData.amount),
-              from: formData.from,
-              type: formData.type, // FIXED
-              description: formData.description,
-              timestamp: formData.timestamp
-            };
+          : formData.type === "expense"
+            ? {
+                amount: parseFloat(formData.amount),
+                from: formData.from,
+                to: OTHERS_ACCOUNT_ID,
+                type: formData.type,
+                description: formData.description,
+                timestamp: formData.timestamp
+              }
+            : {
+                amount: parseFloat(formData.amount),
+                from: OTHERS_ACCOUNT_ID,
+                to: formData.from,
+                type: formData.type,
+                description: formData.description,
+                timestamp: formData.timestamp
+              };
 
       const response = await axios.post("http://localhost:5000/api/transactions/create", payload, {
         headers: {
