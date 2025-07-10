@@ -8,15 +8,16 @@
     "build": "tsc --build",
     "dev": "tsc --watch"
   },
-  "keywords": [], 
+  "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@ledgerX/core": "workspace:*",
     "@prisma/client": "^6.9.0",
+    "@repo/typescript-config": "workspace:*",
     "prisma": "^6.9.0",
     "typescript": "^5.8.3",
-    "@repo/typescript-config": "workspace:*",
-    "@ledgerX/core": "workspace:*"
+    "zod": "^3.25.67"
   },
   "devDependencies": {
     "@types/node": "^24.0.2"

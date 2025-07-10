@@ -1,9 +1,16 @@
-import { prisma } from "@ledgerX/db";
 import { Account, AccountType } from "@ledgerX/db";
+import {
+  createAccount as rawCreateAccount,
+  getUserAccounts as rawGetUserAccounts,
+  getAccountById as rawGetAccountById,
+  deleteAccount as rawDeleteAccount,
+  updateAccountName as rawUpdateAccountName,
+} from "@ledgerX/db/repo/account";
+
 import { z } from "zod";
 
-// Zod schemas defined inline
-const accountTypeEnum = z.nativeEnum(AccountType );
+// Zod schemas
+const accountTypeEnum = z.nativeEnum(AccountType);
 
 const createAccountSchema = z.object({
   userId: z.string().uuid(),
@@ -25,43 +32,29 @@ export async function createAccount(
   type: AccountType
 ): Promise<Account> {
   const parsed = createAccountSchema.parse({ userId, name, type });
-
-  return prisma.account.create({
-    data: parsed,
-  });
+  return rawCreateAccount(parsed.userId, parsed.name, parsed.type);
 }
 
 /**
- * Get all accounts of a user (optionally includes entries)
+ * Get all accounts of a user (includes ledger entries)
  */
 export async function getUserAccounts(userId: string): Promise<Account[]> {
   if (!z.string().uuid().safeParse(userId).success) {
     throw new Error("Invalid userId");
   }
 
-  return prisma.account.findMany({
-    where: { userId },
-    include: {
-      entries: true,
-    },
-  });
+  return rawGetUserAccounts(userId);
 }
 
 /**
- * Get a specific account by its ID (with user + entries)
+ * Get a specific account by ID (includes user + entries)
  */
 export async function getAccountById(accountId: string): Promise<Account | null> {
   if (!z.string().uuid().safeParse(accountId).success) {
     throw new Error("Invalid accountId");
   }
 
-  return prisma.account.findUnique({
-    where: { id: accountId },
-    include: {
-      user: true,
-      entries: true,
-    },
-  });
+  return rawGetAccountById(accountId);
 }
 
 /**
@@ -72,9 +65,7 @@ export async function deleteAccount(accountId: string): Promise<Account> {
     throw new Error("Invalid accountId");
   }
 
-  return prisma.account.delete({
-    where: { id: accountId },
-  });
+  return rawDeleteAccount(accountId);
 }
 
 /**
@@ -85,9 +76,5 @@ export async function updateAccountName(
   newName: string
 ): Promise<Account> {
   const parsed = updateAccountNameSchema.parse({ accountId, newName });
-
-  return prisma.account.update({
-    where: { id: parsed.accountId },
-    data: { name: parsed.newName },
-  });
+  return rawUpdateAccountName(parsed.accountId, parsed.newName);
 }

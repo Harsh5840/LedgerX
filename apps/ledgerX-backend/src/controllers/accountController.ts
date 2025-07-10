@@ -71,7 +71,7 @@ export const handleDeleteAccount = async (req: Request, res: Response) => {
     await deleteAccount(accountId as string );
     res.status(200).json({ success: true, message: "Account deleted" });
   } catch (error) {
-    console.error("Failed to delete account:", error);
+    console.error("Failed to delete account:", error); 
     res.status(500).json({ success: false, error: "Internal server error" });
   }
 };
