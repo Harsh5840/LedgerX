@@ -71,7 +71,7 @@ export default function NLPAssistantPage() {
   const { toast } = useToast()
 
   // Determine user role (in real app, this would come from auth context)
-  const userRole = "USER" // Change to 'ADMIN' to see admin features
+  const userRole: "USER" | "ADMIN" = "USER" // Change to 'ADMIN' to see admin features
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -124,10 +124,10 @@ export default function NLPAssistantPage() {
     <div className="flex h-screen bg-slate-50 dark:bg-slate-950">
       <Sidebar userRole={userRole} />
 
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <Navbar userRole={userRole} userName={userRole === "ADMIN" ? "Admin User" : "John Doe"} />
+      <div className="flex-1 flex flex-col h-screen overflow-hidden">
+        <Navbar userRole={userRole} userName="John Doe" />
 
-        <main className="flex-1 overflow-y-auto p-6">
+        <main className="flex-1 flex flex-col p-6 h-[calc(100vh-64px)]"> {/* 64px for Navbar height */}
           {/* Header */}
           <div className="mb-8">
             <div className="flex items-center space-x-3 mb-2">
@@ -148,7 +148,7 @@ export default function NLPAssistantPage() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-200px)]">
             {/* Chat Interface */}
             <div className="lg:col-span-2 flex flex-col">
-              <Card className="neumorphic border-0 flex-1 flex flex-col">
+              <Card className="neumorphic border-0 flex-1 flex flex-col h-full">
                 <CardHeader>
                   <CardTitle className="flex items-center space-x-2">
                     <MessageCircle className="h-5 w-5" />
@@ -158,9 +158,9 @@ export default function NLPAssistantPage() {
                     Ask questions about your spending, transactions, and financial patterns
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="flex-1 flex flex-col">
+                <CardContent className="flex-1 flex flex-col h-full">
                   {/* Messages */}
-                  <div className="flex-1 overflow-y-auto space-y-4 mb-4">
+                  <div className="flex-1 overflow-y-auto space-y-4 mb-4 h-full max-h-full">
                     {conversation.length === 0 ? (
                       <div className="text-center py-12">
                         <div className="w-16 h-16 bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-900 dark:to-purple-900 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -230,7 +230,11 @@ export default function NLPAssistantPage() {
                   </div>
 
                   {/* Input Form */}
-                  <form onSubmit={handleSubmit} className="flex space-x-2">
+                  <form
+                    onSubmit={handleSubmit}
+                    className="flex space-x-2 mt-auto" // <-- add mt-auto to push it to the bottom
+                    style={{ background: "inherit" }} // optional, to avoid overlap
+                  >
                     <Input
                       value={query}
                       onChange={(e) => setQuery(e.target.value)}
