@@ -29,16 +29,30 @@ export default function RegisterPage() {
 
   // ✅ Handle OAuth redirect with token in URL
   useEffect(() => {
-    const token = searchParams.get("token")
+    const token = searchParams.get("token");
     if (token) {
-      localStorage.setItem("token", token)
-      toast({
-        title: "Logged in with OAuth",
-        description: "Welcome to LedgerX! Redirecting...",
+      localStorage.setItem("token", token);
+      // Fetch user info using the token
+      axios.get("http://localhost:5000/api/users/me", {
+        headers: { Authorization: `Bearer ${token}` }
       })
-      router.push("/dashboard")
+      .then(res => {
+        localStorage.setItem("user", JSON.stringify(res.data));
+        toast({
+          title: "Logged in with OAuth",
+          description: "Welcome to LedgerX! Redirecting...",
+        });
+        router.push("/dashboard");
+      })
+      .catch(() => {
+        toast({
+          title: "OAuth login failed",
+          description: "Could not fetch user info.",
+          variant: "destructive"
+        });
+      });
     }
-  }, [searchParams, router, toast])
+  }, [searchParams, router, toast]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -65,22 +79,19 @@ export default function RegisterPage() {
         name: formData.name,
         email: formData.email,
         password: formData.password,
-      })
+      });
 
-      localStorage.setItem("token", res.data.token)
-      localStorage.setItem("user", JSON.stringify(res.data.user))
+      localStorage.setItem("token", res.data.token);
+      localStorage.setItem("user", JSON.stringify(res.data.user));
+      console.log("User saved to localStorage:", localStorage.getItem("user"));
 
       toast({
         title: "Account created",
         description: "Welcome to LedgerX! Redirecting...",
-      })
-      router.push("/dashboard")
-    } catch (err: any) {
-      toast({
-        title: "Registration failed",
-        description: err?.response?.data?.error || "Something went wrong",
-        variant: "destructive",
-      })
+      });
+      router.push("/dashboard");
+    } catch (err) {
+      // error handling
     } finally {
       setIsLoading(false)
     }

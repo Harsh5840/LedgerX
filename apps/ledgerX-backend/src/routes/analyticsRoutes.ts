@@ -32,7 +32,7 @@ router.get(
 router.get(
   "/top-categories",
   requireRole("USER", "ADMIN") as RequestHandler,
-  validateQuery(topCategoriesQuerySchema) as RequestHandler,
+  // validateQuery(topCategoriesQuerySchema) as RequestHandler,
   handleTopCategories 
 );
 
@@ -40,7 +40,7 @@ router.get(
 router.get(
   "/monthly-trend",
   requireRole("USER", "ADMIN") as RequestHandler,
-  validateQuery(monthlyTrendQuerySchema)        as RequestHandler,
+  // validateQuery(monthlyTrendQuerySchema)        as RequestHandler,
   handleMonthlyTrend as RequestHandler
 );
 
@@ -48,7 +48,7 @@ router.get(
 router.get(
   "/flagged",
   requireRole("USER", "ADMIN", "AUDITOR") as RequestHandler,
-  validateQuery(flaggedQuerySchema) as RequestHandler,
+  // validateQuery(flaggedQuerySchema) as RequestHandler,
   handleFlaggedOrRisky as RequestHandler
 );
 

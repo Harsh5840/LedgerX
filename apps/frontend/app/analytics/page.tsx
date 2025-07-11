@@ -44,9 +44,8 @@ export default function AnalyticsPage() {
     return {};
   }
 
-  // Get token and userId from localStorage
+  // Get token from localStorage
   const token = typeof window !== 'undefined' ? localStorage.getItem("token") : null;
-  const userId = typeof window !== 'undefined' ? localStorage.getItem("userId") : null;
   const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
 
   useEffect(() => {
@@ -58,7 +57,7 @@ export default function AnalyticsPage() {
 
         // Total Spending
         const totalRes = await axios.get("http://localhost:5000/api/analytics/total", {
-          params: { userId, month, year },
+          params: { month, year }, // userId removed
           ...config,
         });
         setTotal(totalRes.data.total);
@@ -66,7 +65,7 @@ export default function AnalyticsPage() {
 
         // Top Categories
         const catRes = await axios.get("http://localhost:5000/api/analytics/top-categories", {
-          params: { userId, month, year },
+          params: { month, year }, // userId removed
           ...config,
         });
         setTopCategories(catRes.data.categories);
@@ -74,20 +73,20 @@ export default function AnalyticsPage() {
 
         // Monthly Trend (usually for all months, but you can filter if needed)
         const trendRes = await axios.get("http://localhost:5000/api/analytics/monthly-trend", {
-          params: { userId },
+          params: {}, // userId removed
           ...config,
         });
         setMonthlyTrend(trendRes.data.trend);
         console.log(trendRes.data.trend);
         // Flagged/Risky
         const flaggedRes = await axios.get("http://localhost:5000/api/analytics/flagged", {
-          params: { userId },
+          params: {}, // userId removed
           ...config,
         });
         setFlagged(flaggedRes.data.flagged);
         console.log(flaggedRes.data.flagged);
       } catch (err: any) {
-        console.log(err.response.data.error);
+        console.log("Error fetching analytics:", err);
         setError("Could not fetch analytics data.");
         toast({
           title: "Error loading analytics",
@@ -98,8 +97,9 @@ export default function AnalyticsPage() {
         setLoading(false);
       }
     }
-    if (token && userId) fetchAnalytics();
-  }, [token, userId, timeRange]);
+    console.log("token", token);
+    if (token) fetchAnalytics();
+  }, [token, timeRange]);
 
   const handleExport = () => {
     toast({
@@ -170,7 +170,7 @@ export default function AnalyticsPage() {
                       innerRadius={40}
                       outerRadius={80}
                       paddingAngle={5}
-                      dataKey="amount"
+                      dataKey="total"
                     >
                       {topCategories.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={`hsl(${index * 50}, 70%, 50%)`} />
@@ -184,10 +184,10 @@ export default function AnalyticsPage() {
                       <div className="flex items-center space-x-2">
                         <div className="w-3 h-3 rounded-full" style={{ backgroundColor: `hsl(${index * 50}, 70%, 50%)` }} />
                         <Utensils className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm">{item.name}</span>
+                        <span className="text-sm">{item.category}</span>
                       </div>
                       <div className="text-right">
-                        <span className="text-sm font-medium">${item.amount}</span>
+                        <span className="text-sm font-medium">${item.total}</span>
                         {item.percentage && <span className="text-xs text-muted-foreground ml-2">({item.percentage}%)</span>}
                       </div>
                     </div>
@@ -214,7 +214,7 @@ export default function AnalyticsPage() {
                     <XAxis dataKey="month" />
                     <YAxis />
                     <Tooltip />
-                    <Area type="monotone" dataKey="amount" stroke="#3B82F6" fill="#3B82F6" fillOpacity={0.2} />
+                    <Area type="monotone" dataKey="total" stroke="#3B82F6" fill="#3B82F6" fillOpacity={0.2} />
                   </AreaChart>
                 </ResponsiveContainer>
               )}

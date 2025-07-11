@@ -103,6 +103,7 @@ export function Sidebar({ userRole }: SidebarProps) {
   const navItems = userRole === "ADMIN" ? adminNavItems : userNavItems
 
   const handleLogout = () => {
+    localStorage.clear(); // Clear all local storage on logout
     toast({
       title: "Logged out successfully",
       description: "Redirecting to homepage...",

@@ -9,7 +9,11 @@ import {
 // GET /analytics/total
 export const handleTotalSpending = async (req: Request, res: Response) => {
   try {
-    const { userId, category, month, year } = req.query;
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+    const { category, month, year } = req.query;
 
     const total = await getTotalSpendingWithFilters({
       userId: userId as string,
@@ -28,7 +32,8 @@ export const handleTotalSpending = async (req: Request, res: Response) => {
 // GET /analytics/top-categories
 export const handleTopCategories = async (req: Request, res: Response) => {
   try {
-    const { userId, month, year, limit } = req.query;
+    const userId = req.user?.id;
+    const { month, year, limit } = req.query;
 
     const categories = await getTopCategoriesWithFilters(
       {
@@ -49,7 +54,7 @@ export const handleTopCategories = async (req: Request, res: Response) => {
 // GET /analytics/monthly-trend
 export const handleMonthlyTrend = async (req: Request, res: Response) => {
   try {
-    const { userId } = req.query;
+    const userId = req.user?.id;
     if (!userId) {
       return res.status(400).json({ success: false, error: "Missing userId" });
     }
@@ -65,7 +70,7 @@ export const handleMonthlyTrend = async (req: Request, res: Response) => {
 // GET /analytics/flagged
 export const handleFlaggedOrRisky = async (req: Request, res: Response) => {
   try {
-    const { userId } = req.query;
+    const userId = req.user?.id; 
     if (!userId) {
       return res.status(400).json({ success: false, error: "Missing userId" });
     }

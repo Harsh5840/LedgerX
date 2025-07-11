@@ -24,22 +24,33 @@ passport.use(
     },
     async (_accessToken, _refreshToken, profile: GoogleProfile, done) => {
       try {
-        const email = profile.emails?.[0]?.value;
-        if (!email) return done(new Error("No email from Google"));
-
-        let user = await prisma.user.findUnique({ where: { email } });
+        let user = await prisma.user.findUnique({ where: { googleId: profile.id } });
 
         if (!user) {
-          user = await prisma.user.create({
-            data: {
-              email,
-              name: profile.displayName || "Google User",
-              role: "USER",
-              password: null, // password is null for OAuth users
-            },
-          });
-        }
+          // Fallback to email
+          const email = profile.emails?.[0]?.value;
+          if (!email) return done(new Error("No email from Google"));
 
+          user = await prisma.user.findUnique({ where: { email } });
+
+          if (!user) {
+            user = await prisma.user.create({
+              data: {
+                email,
+                name: profile.displayName || "Google User",
+                role: "USER",
+                password: null,
+                googleId: profile.id, // Save Google ID
+              },
+            });
+          } else if (!user.googleId) {
+            // Link Google ID to existing user
+            user = await prisma.user.update({
+              where: { id: user.id },
+              data: { googleId: profile.id },
+            });
+          }
+        }
         return done(null, user);
       } catch (error) {
         return done(error as Error);
@@ -78,22 +89,33 @@ passport.use(
       done: (error: any, user?: any) => void
     ): Promise<void> => {
       try {
-        const email: string | undefined = profile.emails?.[0]?.value;
-        if (!email) return done(new Error("No email from GitHub"));
-
-        let user = await prisma.user.findUnique({ where: { email } });
+        let user = await prisma.user.findUnique({ where: { githubId: profile.id } });
 
         if (!user) {
-          user = await prisma.user.create({
-            data: {
-              email,
-              name: profile.displayName || "GitHub User",
-              role: "USER",
-              password: null, // password is null for OAuth users
-            },
-          });
-        }
+          // Fallback to email
+          const email: string | undefined = profile.emails?.[0]?.value;
+          if (!email) return done(new Error("No email from GitHub"));
 
+          user = await prisma.user.findUnique({ where: { email } });
+
+          if (!user) {
+            user = await prisma.user.create({
+              data: {
+                email,
+                name: profile.displayName || "GitHub User",
+                role: "USER",
+                password: null,
+                githubId: profile.id, // Save GitHub ID
+              },
+            });
+          } else if (!user.githubId) {
+            // Link GitHub ID to existing user
+            user = await prisma.user.update({
+              where: { id: user.id },
+              data: { githubId: profile.id },
+            });
+          }
+        }
         return done(null, user);
       } catch (error) {
         return done(error as Error);
