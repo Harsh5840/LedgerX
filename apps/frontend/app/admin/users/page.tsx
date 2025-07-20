@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -25,96 +25,41 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
 
-// Mock user data
-const users = [
-  {
-    id: "user_001",
-    name: "John Doe",
-    email: "john.doe@email.com",
-    avatar: "/placeholder-user.jpg",
-    status: "active",
-    role: "user",
-    joinDate: "2023-06-15",
-    lastLogin: "2024-01-15 14:30:22",
-    totalTransactions: 247,
-    totalVolume: 45230.5,
-    riskScore: 25,
-    accountsCount: 3,
-    kycStatus: "verified",
-    location: "New York, NY",
-  },
-  {
-    id: "user_002",
-    name: "Jane Smith",
-    email: "jane.smith@email.com",
-    avatar: "/placeholder-user.jpg",
-    status: "active",
-    role: "premium",
-    joinDate: "2023-08-22",
-    lastLogin: "2024-01-15 09:15:33",
-    totalTransactions: 189,
-    totalVolume: 32150.75,
-    riskScore: 15,
-    accountsCount: 2,
-    kycStatus: "verified",
-    location: "Los Angeles, CA",
-  },
-  {
-    id: "user_003",
-    name: "Bob Wilson",
-    email: "bob.wilson@email.com",
-    avatar: "/placeholder-user.jpg",
-    status: "suspended",
-    role: "user",
-    joinDate: "2023-04-10",
-    lastLogin: "2024-01-10 16:45:12",
-    totalTransactions: 156,
-    totalVolume: 28750.25,
-    riskScore: 85,
-    accountsCount: 1,
-    kycStatus: "pending",
-    location: "Chicago, IL",
-  },
-  {
-    id: "user_004",
-    name: "Alice Brown",
-    email: "alice.brown@email.com",
-    avatar: "/placeholder-user.jpg",
-    status: "active",
-    role: "business",
-    joinDate: "2023-09-05",
-    lastLogin: "2024-01-14 11:20:45",
-    totalTransactions: 423,
-    totalVolume: 125430.8,
-    riskScore: 35,
-    accountsCount: 5,
-    kycStatus: "verified",
-    location: "Austin, TX",
-  },
-  {
-    id: "user_005",
-    name: "Charlie Davis",
-    email: "charlie.davis@email.com",
-    avatar: "/placeholder-user.jpg",
-    status: "inactive",
-    role: "user",
-    joinDate: "2023-11-18",
-    lastLogin: "2023-12-20 08:30:15",
-    totalTransactions: 23,
-    totalVolume: 1250.3,
-    riskScore: 10,
-    accountsCount: 1,
-    kycStatus: "verified",
-    location: "Seattle, WA",
-  },
-]
-
 export default function AdminUsersPage() {
+  const [users, setUsers] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
   const [roleFilter, setRoleFilter] = useState("all")
   const [riskFilter, setRiskFilter] = useState("all")
   const { toast } = useToast()
+
+  useEffect(() => {
+    setLoading(true)
+    setError(null)
+    const fetchUsers = async () => {
+      try {
+        const token = localStorage.getItem("token")
+        const res = await fetch("http://localhost:5000/api/users/all", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        })
+        const data = await res.json()
+        if (Array.isArray(data)) {
+          setUsers(data)
+        } else {
+          setError("Failed to load users: Invalid response format.")
+        }
+      } catch (e) {
+        setError("Failed to load users.")
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchUsers()
+  }, [])
 
   const filteredUsers = users.filter((user) => {
     const matchesSearch =
@@ -203,6 +148,10 @@ export default function AdminUsersPage() {
   const suspendedUsers = users.filter((user) => user.status === "suspended").length
   const totalVolume = users.reduce((sum, user) => sum + user.totalVolume, 0)
   const averageRisk = users.reduce((sum, user) => sum + user.riskScore, 0) / users.length
+
+  // In the render, show loading and error states
+  // if (loading) return <div>Loading users...</div>
+  // if (error) return <div>{error}</div>
 
   return (
     <div className="flex h-screen bg-slate-50 dark:bg-slate-950">
@@ -351,7 +300,7 @@ export default function AdminUsersPage() {
                         <AvatarFallback>
                           {user.name
                             .split(" ")
-                            .map((n) => n[0])
+                            .map((n: string) => n[0])
                             .join("")}
                         </AvatarFallback>
                       </Avatar>

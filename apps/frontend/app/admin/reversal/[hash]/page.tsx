@@ -24,65 +24,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox"
 
 // Mock transaction data - in real app this would come from API
-const getTransactionByHash = (hash: string) => {
-  const transactions = {
-    abc123def456: {
-      id: "TXN001",
-      hash: "abc123def456",
-      user: {
-        id: "user_123",
-        name: "John Doe",
-        email: "john.doe@email.com",
-        accountNumber: "****1234",
-      },
-      amount: 1250.0,
-      description: "Large Purchase - Electronics Store",
-      category: "Shopping",
-      status: "completed",
-      timestamp: "2024-01-15 14:30:22",
-      merchantInfo: {
-        name: "TechWorld Electronics",
-        id: "MERCHANT_789",
-        location: "New York, NY",
-      },
-      paymentMethod: "Credit Card ****5678",
-      riskScore: 85,
-      flags: ["Large Amount", "New Merchant"],
-      previousReversals: 0,
-      canReverse: true,
-      reversalDeadline: "2024-01-22 14:30:22",
-    },
-    def456ghi789: {
-      id: "TXN002",
-      hash: "def456ghi789",
-      user: {
-        id: "user_456",
-        name: "Jane Smith",
-        email: "jane.smith@email.com",
-        accountNumber: "****5678",
-      },
-      amount: 3500.0,
-      description: "Salary Deposit",
-      category: "Income",
-      status: "completed",
-      timestamp: "2024-01-15 13:45:10",
-      merchantInfo: {
-        name: "ABC Corporation",
-        id: "MERCHANT_456",
-        location: "San Francisco, CA",
-      },
-      paymentMethod: "Direct Deposit",
-      riskScore: 15,
-      flags: [],
-      previousReversals: 0,
-      canReverse: false,
-      reversalDeadline: null,
-      reversalBlockedReason: "Income transactions cannot be reversed",
-    },
-  }
-
-  return transactions[hash as keyof typeof transactions] || null
-}
+// REMOVE: getTransactionByHash mock function
 
 export default function TransactionReversalPage() {
   const params = useParams()
@@ -102,12 +44,28 @@ export default function TransactionReversalPage() {
   const [isProcessing, setIsProcessing] = useState(false)
 
   useEffect(() => {
-    // Simulate API call to fetch transaction
-    setTimeout(() => {
-      const txn = getTransactionByHash(params.hash as string)
-      setTransaction(txn)
-      setLoading(false)
-    }, 1000)
+    setLoading(true)
+    setTransaction(null)
+    setTimeout(async () => {
+      try {
+        const token = localStorage.getItem("token")
+        const res = await fetch(`http://localhost:5000/api/transactions/${params.hash}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        })
+        const data = await res.json()
+        if (data && data.id) {
+          setTransaction(data)
+        } else {
+          setTransaction(null)
+        }
+      } catch (e) {
+        setTransaction(null)
+      } finally {
+        setLoading(false)
+      }
+    }, 0)
   }, [params.hash])
 
   const handleCheckboxChange = (key: string, checked: boolean) => {

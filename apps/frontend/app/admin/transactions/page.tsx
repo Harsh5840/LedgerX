@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -15,86 +15,10 @@ import { ReversalConfirmationModal } from "@/components/reversal-confirmation-mo
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 
-// Mock data - in real app this would come from API
-const transactions = [
-  {
-    id: "TXN001",
-    hash: "abc123def456",
-    user: {
-      name: "John Doe",
-      email: "john.doe@email.com",
-    },
-    description: "Large Purchase - Electronics Store",
-    amount: -1250.0,
-    category: "Shopping",
-    status: "completed",
-    timestamp: "2024-01-15 14:30:22",
-    canReverse: true,
-    riskScore: 85,
-  },
-  {
-    id: "TXN002",
-    hash: "def456ghi789",
-    user: {
-      name: "Jane Smith",
-      email: "jane.smith@email.com",
-    },
-    description: "Salary Deposit",
-    amount: 3500.0,
-    category: "Income",
-    status: "completed",
-    timestamp: "2024-01-15 13:45:10",
-    canReverse: false,
-    riskScore: 15,
-  },
-  {
-    id: "TXN003",
-    hash: "ghi789jkl012",
-    user: {
-      name: "Bob Wilson",
-      email: "bob.wilson@email.com",
-    },
-    description: "Uber Ride",
-    amount: -18.75,
-    category: "Transportation",
-    status: "completed",
-    timestamp: "2024-01-14 16:20:33",
-    canReverse: true,
-    riskScore: 25,
-  },
-  {
-    id: "TXN004",
-    hash: "jkl012mno345",
-    user: {
-      name: "Alice Brown",
-      email: "alice.brown@email.com",
-    },
-    description: "Amazon Purchase",
-    amount: -89.99,
-    category: "Shopping",
-    status: "pending",
-    timestamp: "2024-01-14 12:15:44",
-    canReverse: false,
-    riskScore: 45,
-  },
-  {
-    id: "TXN005",
-    hash: "mno345pqr678",
-    user: {
-      name: "Charlie Davis",
-      email: "charlie.davis@email.com",
-    },
-    description: "Netflix Subscription",
-    amount: -15.99,
-    category: "Entertainment",
-    status: "completed",
-    timestamp: "2024-01-13 09:30:15",
-    canReverse: true,
-    riskScore: 10,
-  },
-]
-
 export default function AdminTransactionsPage() {
+  const [transactions, setTransactions] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
   const [categoryFilter, setCategoryFilter] = useState("all")
@@ -103,6 +27,32 @@ export default function AdminTransactionsPage() {
   const [isProcessingReversal, setIsProcessingReversal] = useState(false)
   const { toast } = useToast()
   const router = useRouter()
+
+  useEffect(() => {
+    setLoading(true)
+    setError(null)
+    const fetchTransactions = async () => {
+      try {
+        const token = localStorage.getItem("token")
+        const res = await fetch("http://localhost:5000/api/transactions/all", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        })
+        const data = await res.json()
+        if (Array.isArray(data)) {
+          setTransactions(data)
+        } else {
+          setError("Failed to load transactions: Invalid response format.")
+        }
+      } catch (e) {
+        setError("Failed to load transactions.")
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchTransactions()
+  }, [])
 
   const filteredTransactions = transactions.filter((transaction) => {
     const matchesSearch =
@@ -262,7 +212,17 @@ export default function AdminTransactionsPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {filteredTransactions.map((transaction) => (
+                {loading && (
+                  <div className="text-center py-12">
+                    <p className="text-muted-foreground">Loading transactions...</p>
+                  </div>
+                )}
+                {error && (
+                  <div className="text-center py-12 text-red-500">
+                    <p>{error}</p>
+                  </div>
+                )}
+                {!loading && !error && filteredTransactions.map((transaction) => (
                   <div
                     key={transaction.id}
                     className="flex items-center justify-between p-4 rounded-lg bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
@@ -357,7 +317,7 @@ export default function AdminTransactionsPage() {
                 ))}
               </div>
 
-              {filteredTransactions.length === 0 && (
+              {filteredTransactions.length === 0 && !loading && !error && (
                 <div className="text-center py-12">
                   <p className="text-muted-foreground">No transactions found matching your criteria</p>
                 </div>

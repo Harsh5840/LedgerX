@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -9,7 +8,16 @@ import { Input } from "@/components/ui/input"
 import { Sidebar } from "@/components/layout/sidebar"
 import { Navbar } from "@/components/layout/navbar"
 import { Badge } from "@/components/ui/badge"
-import { Send, Brain, Sparkles, MessageCircle, TrendingUp, DollarSign, Calendar, PieChart } from "lucide-react"
+import {
+  Send,
+  Brain,
+  Sparkles,
+  MessageCircle,
+  TrendingUp,
+  DollarSign,
+  Calendar,
+  PieChart,
+} from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 
 const sampleQueries = [
@@ -20,42 +28,6 @@ const sampleQueries = [
   "Compare my spending to last month",
   "What's my average transaction amount?",
 ]
-
-const mockResponses = {
-  grocery: {
-    query: "What's my grocery spend in June?",
-    response:
-      "Your grocery spending in June was $847.50 across 23 transactions. This is 12% higher than May ($756.20). Your most frequent grocery store was Whole Foods with $312.40 in purchases.",
-    insights: [
-      { label: "Total Spent", value: "$847.50", icon: DollarSign },
-      { label: "Transactions", value: "23", icon: TrendingUp },
-      { label: "Avg per Transaction", value: "$36.85", icon: PieChart },
-      { label: "vs Last Month", value: "+12%", icon: Calendar },
-    ],
-  },
-  entertainment: {
-    query: "How much did I spend on entertainment?",
-    response:
-      "Your entertainment spending this month is $234.50 across 8 transactions. This includes streaming services ($47.97), movie tickets ($56.00), and dining out ($130.53).",
-    insights: [
-      { label: "Total Spent", value: "$234.50", icon: DollarSign },
-      { label: "Transactions", value: "8", icon: TrendingUp },
-      { label: "Streaming", value: "$47.97", icon: PieChart },
-      { label: "Dining Out", value: "$130.53", icon: Calendar },
-    ],
-  },
-  default: {
-    query: "General financial query",
-    response:
-      "I can help you analyze your spending patterns, track expenses by category, compare monthly trends, and identify unusual transactions. Try asking about specific categories or time periods!",
-    insights: [
-      { label: "Total Balance", value: "$12,847.50", icon: DollarSign },
-      { label: "This Month", value: "$3,847.20", icon: TrendingUp },
-      { label: "Categories", value: "12", icon: PieChart },
-      { label: "Transactions", value: "156", icon: Calendar },
-    ],
-  },
-}
 
 export default function NLPAssistantPage() {
   const [query, setQuery] = useState("")
@@ -69,53 +41,78 @@ export default function NLPAssistantPage() {
     }>
   >([])
   const { toast } = useToast()
-
-  // Determine user role (in real app, this would come from auth context)
-  const userRole: "USER" | "ADMIN" = "USER" // Change to 'ADMIN' to see admin features
+  const userRole: "USER" | "ADMIN" = "USER"
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!query.trim()) return
 
     const timestamp = new Date().toLocaleTimeString()
-
-    // Add user message
     setConversation((prev) => [
       ...prev,
-      {
-        type: "user",
-        content: query,
-        timestamp,
-      },
+      { type: "user", content: query, timestamp },
     ])
-
     setIsLoading(true)
 
-    // Simulate AI processing
-    setTimeout(() => {
-      let response = mockResponses.default
-
-      if (query.toLowerCase().includes("grocery")) {
-        response = mockResponses.grocery
-      } else if (query.toLowerCase().includes("entertainment")) {
-        response = mockResponses.entertainment
-      }
-
-      setConversation((prev) => [
-        ...prev,
-        {
-          type: "assistant",
-          content: response.response,
-          timestamp: new Date().toLocaleTimeString(),
-          insights: response.insights,
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch("http://localhost:5000/api/nlp/query", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
-      ])
+        body: JSON.stringify({ question: query }),
+      })
 
-      setIsLoading(false)
-      setQuery("")
-    }, 1500)
+      const data = await res.json()
+
+      if (!data.success) {
+        setConversation((prev) => [
+          ...prev,
+          {
+            type: "assistant",
+            content: "Sorry, I couldn't understand that. Please try rephrasing.",
+            timestamp: new Date().toLocaleTimeString(),
+          },
+        ])
+      } else {
+        const insights =
+          data.type === "TOTAL_SPENT"
+            ? [
+                { label: "Total Spent", value: `$${data.total}`, icon: DollarSign },
+              ]
+            : data.type === "TOP_CATEGORIES"
+            ? data.categories.map((cat: any) => ({
+                label: cat.name,
+                value: `$${cat.total.toFixed(2)}`,
+                icon: PieChart,
+              }))
+            : undefined
+
+        setConversation((prev) => [
+          ...prev,
+          {
+            type: "assistant",
+            content:
+              data.type === "TOTAL_SPENT"
+                ? `You spent $${data.total} in the selected period.`
+                : data.type === "TOP_CATEGORIES"
+                ? `Here are your top spending categories:`
+                : "I'm not sure how to respond.",
+            timestamp: new Date().toLocaleTimeString(),
+            insights,
+          },
+        ])
+      }
+    } catch (err) {
+      console.error(err)
+      toast({ variant: "destructive", title: "Error", description: "Failed to fetch response from AI backend." })
+    }
+
+    setIsLoading(false)
+    setQuery("")
   }
-
   const handleSampleQuery = (sampleQuery: string) => {
     setQuery(sampleQuery)
   }
@@ -124,17 +121,17 @@ export default function NLPAssistantPage() {
     <div className="flex h-screen bg-slate-50 dark:bg-slate-950">
       <Sidebar userRole={userRole} />
 
-      <div className="flex-1 flex flex-col h-screen overflow-hidden">
+      <div className="flex-1 flex flex-col">
         <Navbar userRole={userRole} userName="John Doe" />
 
-        <main className="flex-1 flex flex-col p-6 h-[calc(100vh-64px)]"> {/* 64px for Navbar height */}
+        <main className="flex-1 flex flex-col p-4 min-h-0">
           {/* Header */}
-          <div className="mb-8">
-            <div className="flex items-center space-x-3 mb-2">
+          <div className="mb-4 flex-shrink-0">
+            <div className="flex items-center space-x-3 mb-1">
               <div className="p-2 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg">
-                <Brain className="h-6 w-6 text-white" />
+                <Brain className="h-5 w-5 text-white" />
               </div>
-              <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100">AI Assistant</h1>
+              <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">AI Assistant</h1>
               <Badge className="bg-gradient-to-r from-blue-500 to-purple-600 text-white">
                 <Sparkles className="h-3 w-3 mr-1" />
                 Powered by AI
@@ -145,33 +142,33 @@ export default function NLPAssistantPage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-200px)]">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 flex-1 min-h-0">
             {/* Chat Interface */}
-            <div className="lg:col-span-2 flex flex-col">
-              <Card className="neumorphic border-0 flex-1 flex flex-col h-full">
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2">
-                    <MessageCircle className="h-5 w-5" />
+            <div className="lg:col-span-2 flex flex-col min-h-0">
+              <Card className="neumorphic border-0 flex-1 flex flex-col min-h-0">
+                <CardHeader className="flex-shrink-0 pb-3">
+                  <CardTitle className="flex items-center space-x-2 text-lg">
+                    <MessageCircle className="h-4 w-4" />
                     <span>Conversation</span>
                   </CardTitle>
-                  <CardDescription>
+                  <CardDescription className="text-sm">
                     Ask questions about your spending, transactions, and financial patterns
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="flex-1 flex flex-col h-full">
+                <CardContent className="flex-1 flex flex-col min-h-0 p-0">
                   {/* Messages */}
-                  <div className="flex-1 overflow-y-auto space-y-4 mb-4 h-full max-h-full">
+                  <div className="flex-1 overflow-y-auto space-y-3 px-4 pt-2 pb-2">
                     {conversation.length === 0 ? (
-                      <div className="text-center py-12">
-                        <div className="w-16 h-16 bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-900 dark:to-purple-900 rounded-full flex items-center justify-center mx-auto mb-4">
-                          <Brain className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+                      <div className="text-center py-8">
+                        <div className="w-12 h-12 bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-900 dark:to-purple-900 rounded-full flex items-center justify-center mx-auto mb-3">
+                          <Brain className="h-6 w-6 text-blue-600 dark:text-blue-400" />
                         </div>
-                        <h3 className="text-lg font-semibold mb-2">Welcome to your AI Financial Assistant!</h3>
-                        <p className="text-muted-foreground mb-4">
+                        <h3 className="text-base font-semibold mb-2">Welcome to your AI Financial Assistant!</h3>
+                        <p className="text-muted-foreground mb-3 text-sm">
                           I can help you understand your spending patterns, analyze transactions, and provide financial
                           insights.
                         </p>
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-xs text-muted-foreground">
                           Try asking a question or click on one of the sample queries below.
                         </p>
                       </div>
@@ -228,50 +225,47 @@ export default function NLPAssistantPage() {
                       </div>
                     )}
                   </div>
-
                   {/* Input Form */}
-                  <form
-                    onSubmit={handleSubmit}
-                    className="flex space-x-2 mt-auto" // <-- add mt-auto to push it to the bottom
-                    style={{ background: "inherit" }} // optional, to avoid overlap
-                  >
-                    <Input
-                      value={query}
-                      onChange={(e) => setQuery(e.target.value)}
-                      placeholder="Ask about your spending, transactions, or financial patterns..."
-                      className="flex-1"
-                      disabled={isLoading}
-                    />
-                    <Button
-                      type="submit"
-                      disabled={isLoading || !query.trim()}
-                      className="bg-gradient-to-r from-blue-600 to-purple-600 text-white"
-                    >
-                      <Send className="h-4 w-4" />
-                    </Button>
-                  </form>
+                  <div className="flex-shrink-0 px-4 py-3 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800">
+                    <form onSubmit={handleSubmit} className="flex space-x-2">
+                      <Input
+                        value={query}
+                        onChange={(e) => setQuery(e.target.value)}
+                        placeholder="Ask about your spending, transactions, or financial patterns..."
+                        className="flex-1"
+                        disabled={isLoading}
+                      />
+                      <Button
+                        type="submit"
+                        disabled={isLoading || !query.trim()}
+                        className="bg-gradient-to-r from-blue-600 to-purple-600 text-white"
+                      >
+                        <Send className="h-4 w-4" />
+                      </Button>
+                    </form>
+                  </div>
                 </CardContent>
               </Card>
             </div>
 
             {/* Sample Queries & Tips */}
-            <div className="space-y-6">
+            <div className="space-y-4 flex flex-col min-h-0">
               {/* Sample Queries */}
-              <Card className="neumorphic border-0">
-                <CardHeader>
-                  <CardTitle className="text-lg">Sample Queries</CardTitle>
-                  <CardDescription>Click to try these example questions</CardDescription>
+              <Card className="neumorphic border-0 flex-1">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base">Sample Queries</CardTitle>
+                  <CardDescription className="text-sm">Click to try these example questions</CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="flex-1 overflow-y-auto">
                   <div className="space-y-2">
                     {sampleQueries.map((sampleQuery, index) => (
                       <Button
                         key={index}
                         variant="ghost"
-                        className="w-full justify-start text-left h-auto p-3 hover:bg-blue-50 dark:hover:bg-blue-950"
+                        className="w-full justify-start text-left h-auto p-2 hover:bg-blue-50 dark:hover:bg-blue-950"
                         onClick={() => handleSampleQuery(sampleQuery)}
                       >
-                        <span className="text-sm">{sampleQuery}</span>
+                        <span className="text-xs">{sampleQuery}</span>
                       </Button>
                     ))}
                   </div>
@@ -279,26 +273,26 @@ export default function NLPAssistantPage() {
               </Card>
 
               {/* Tips */}
-              <Card className="neumorphic border-0">
-                <CardHeader>
-                  <CardTitle className="text-lg">Tips</CardTitle>
+              <Card className="neumorphic border-0 flex-1">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base">Tips</CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="space-y-3 text-sm text-muted-foreground">
+                <CardContent className="flex-1 overflow-y-auto">
+                  <div className="space-y-2 text-xs text-muted-foreground">
                     <div className="flex items-start space-x-2">
-                      <div className="w-2 h-2 bg-blue-600 rounded-full mt-2 flex-shrink-0"></div>
+                      <div className="w-1.5 h-1.5 bg-blue-600 rounded-full mt-1.5 flex-shrink-0"></div>
                       <p>Be specific about time periods (e.g., "last month", "this week")</p>
                     </div>
                     <div className="flex items-start space-x-2">
-                      <div className="w-2 h-2 bg-green-600 rounded-full mt-2 flex-shrink-0"></div>
+                      <div className="w-1.5 h-1.5 bg-green-600 rounded-full mt-1.5 flex-shrink-0"></div>
                       <p>Ask about specific categories like "food", "entertainment", "transportation"</p>
                     </div>
                     <div className="flex items-start space-x-2">
-                      <div className="w-2 h-2 bg-purple-600 rounded-full mt-2 flex-shrink-0"></div>
+                      <div className="w-1.5 h-1.5 bg-purple-600 rounded-full mt-1.5 flex-shrink-0"></div>
                       <p>Request comparisons between different time periods</p>
                     </div>
                     <div className="flex items-start space-x-2">
-                      <div className="w-2 h-2 bg-orange-600 rounded-full mt-2 flex-shrink-0"></div>
+                      <div className="w-1.5 h-1.5 bg-orange-600 rounded-full mt-1.5 flex-shrink-0"></div>
                       <p>Ask for insights about spending patterns and trends</p>
                     </div>
                   </div>

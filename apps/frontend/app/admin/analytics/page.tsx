@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -38,70 +38,54 @@ import {
   Cell,
 } from "recharts"
 
-// Mock admin analytics data
-const systemMetrics = [
-  { month: "Jul", volume: 2400000, transactions: 45000, users: 12000, revenue: 48000 },
-  { month: "Aug", volume: 2650000, transactions: 48500, users: 12800, revenue: 52000 },
-  { month: "Sep", volume: 2800000, transactions: 52000, users: 13500, revenue: 56000 },
-  { month: "Oct", volume: 3100000, transactions: 58000, users: 14200, revenue: 62000 },
-  { month: "Nov", volume: 2950000, transactions: 55500, users: 14800, revenue: 59000 },
-  { month: "Dec", volume: 3400000, transactions: 62000, users: 15600, revenue: 68000 },
-  { month: "Jan", volume: 3200000, transactions: 59000, users: 16200, revenue: 64000 },
-]
-
-const userGrowth = [
-  { month: "Jul", newUsers: 800, activeUsers: 11200, churnRate: 2.1 },
-  { month: "Aug", newUsers: 950, activeUsers: 12100, churnRate: 1.8 },
-  { month: "Sep", newUsers: 1200, activeUsers: 12800, churnRate: 1.5 },
-  { month: "Oct", newUsers: 1100, activeUsers: 13400, churnRate: 1.7 },
-  { month: "Nov", newUsers: 900, activeUsers: 14100, churnRate: 2.0 },
-  { month: "Dec", newUsers: 1300, activeUsers: 14900, churnRate: 1.4 },
-  { month: "Jan", newUsers: 1150, activeUsers: 15800, churnRate: 1.6 },
-]
-
-const transactionTypes = [
-  { name: "Transfers", value: 45, color: "#3B82F6" },
-  { name: "Payments", value: 30, color: "#10B981" },
-  { name: "Deposits", value: 15, color: "#F59E0B" },
-  { name: "Withdrawals", value: 10, color: "#EF4444" },
-]
-
-const riskMetrics = [
-  { category: "Low Risk", count: 52000, percentage: 88.1, color: "#10B981" },
-  { category: "Medium Risk", count: 5200, percentage: 8.8, color: "#F59E0B" },
-  { category: "High Risk", count: 1560, percentage: 2.6, color: "#EF4444" },
-  { category: "Critical", count: 312, percentage: 0.5, color: "#DC2626" },
-]
-
-const geographicData = [
-  { region: "North America", users: 8500, volume: 1800000, percentage: 52.4 },
-  { region: "Europe", users: 4200, volume: 920000, percentage: 25.9 },
-  { region: "Asia Pacific", users: 2800, volume: 580000, percentage: 17.3 },
-  { region: "Latin America", users: 500, volume: 120000, percentage: 3.1 },
-  { region: "Others", users: 200, volume: 80000, percentage: 1.3 },
-]
-
-const performanceMetrics = [
-  { metric: "Average Response Time", value: "245ms", change: -12, status: "good" },
-  { metric: "System Uptime", value: "99.97%", change: 0.02, status: "excellent" },
-  { metric: "Transaction Success Rate", value: "99.8%", change: 0.1, status: "excellent" },
-  { metric: "API Error Rate", value: "0.12%", change: -0.05, status: "good" },
-]
-
-const revenueBreakdown = [
-  { source: "Transaction Fees", amount: 45000, percentage: 70.3 },
-  { source: "Subscription Plans", amount: 12000, percentage: 18.8 },
-  { source: "Premium Features", amount: 5000, percentage: 7.8 },
-  { source: "API Usage", amount: 2000, percentage: 3.1 },
-]
-
 export default function AdminAnalyticsPage() {
+  const [analyticsData, setAnalyticsData] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [timeRange, setTimeRange] = useState("6months")
   const [selectedMetric, setSelectedMetric] = useState("volume")
   const { toast } = useToast()
 
-  const currentMonth = systemMetrics[systemMetrics.length - 1]
-  const previousMonth = systemMetrics[systemMetrics.length - 2]
+  useEffect(() => {
+    setLoading(true)
+    setError(null)
+    const fetchAnalytics = async () => {
+      try {
+        const token = localStorage.getItem("token")
+        const res = await fetch("http://localhost:5000/api/admin/analytics", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        })
+        const data = await res.json()
+        if (data) {
+          setAnalyticsData(data)
+        } else {
+          setError("Failed to load analytics data: Invalid response format.")
+        }
+      } catch (e) {
+        setError("Failed to load analytics data.")
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchAnalytics()
+  }, [])
+
+  if (loading) {
+    return <div className="text-center py-8">Loading...</div>
+  }
+
+  if (error) {
+    return <div className="text-center py-8 text-red-500">{error}</div>
+  }
+
+  if (!analyticsData) {
+    return <div className="text-center py-8">No data available.</div>
+  }
+
+  const currentMonth = analyticsData.systemMetrics[analyticsData.systemMetrics.length - 1]
+  const previousMonth = analyticsData.systemMetrics[analyticsData.systemMetrics.length - 2]
 
   const volumeChange = (((currentMonth.volume - previousMonth.volume) / previousMonth.volume) * 100).toFixed(1)
   const transactionChange = (
@@ -263,7 +247,7 @@ export default function AdminAnalyticsPage() {
                   </CardHeader>
                   <CardContent>
                     <ResponsiveContainer width="100%" height={300}>
-                      <BarChart data={systemMetrics}>
+                      <BarChart data={analyticsData.systemMetrics}>
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis dataKey="month" />
                         <YAxis yAxisId="left" />
@@ -293,7 +277,7 @@ export default function AdminAnalyticsPage() {
                     <ResponsiveContainer width="100%" height={300}>
                       <PieChart>
                         <Pie
-                          data={transactionTypes}
+                          data={analyticsData.transactionTypes}
                           cx="50%"
                           cy="50%"
                           innerRadius={60}
@@ -301,7 +285,7 @@ export default function AdminAnalyticsPage() {
                           paddingAngle={5}
                           dataKey="value"
                         >
-                          {transactionTypes.map((entry, index) => (
+                          {analyticsData.transactionTypes.map((entry: any, index: number) => (
                             <Cell key={`cell-${index}`} fill={entry.color} />
                           ))}
                         </Pie>
@@ -309,7 +293,7 @@ export default function AdminAnalyticsPage() {
                       </PieChart>
                     </ResponsiveContainer>
                     <div className="mt-4 space-y-2">
-                      {transactionTypes.map((item, index) => (
+                      {analyticsData.transactionTypes.map((item: any, index: number) => (
                         <div key={index} className="flex items-center justify-between">
                           <div className="flex items-center space-x-2">
                             <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }} />
@@ -331,7 +315,7 @@ export default function AdminAnalyticsPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    {performanceMetrics.map((metric, index) => (
+                    {analyticsData.performanceMetrics.map((metric: any, index: number) => (
                       <div key={index} className="p-4 rounded-lg bg-slate-50 dark:bg-slate-800">
                         <div className="flex items-center justify-between mb-2">
                           <h4 className="font-medium text-sm">{metric.metric}</h4>
@@ -383,7 +367,7 @@ export default function AdminAnalyticsPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {revenueBreakdown.map((source, index) => (
+                    {analyticsData.revenueBreakdown.map((source: any, index: number) => (
                       <div key={index} className="space-y-2">
                         <div className="flex items-center justify-between">
                           <h4 className="font-medium">{source.source}</h4>
@@ -415,7 +399,7 @@ export default function AdminAnalyticsPage() {
                   </CardHeader>
                   <CardContent>
                     <ResponsiveContainer width="100%" height={300}>
-                      <BarChart data={userGrowth}>
+                      <BarChart data={analyticsData.userGrowth}>
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis dataKey="month" />
                         <YAxis yAxisId="left" />
@@ -436,7 +420,7 @@ export default function AdminAnalyticsPage() {
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
-                      {geographicData.map((region, index) => (
+                      {analyticsData.geographicData.map((region: any, index: number) => (
                         <div key={index} className="space-y-2">
                           <div className="flex items-center justify-between">
                             <div className="flex items-center space-x-2">
@@ -471,7 +455,7 @@ export default function AdminAnalyticsPage() {
                 </CardHeader>
                 <CardContent>
                   <ResponsiveContainer width="100%" height={400}>
-                    <AreaChart data={systemMetrics}>
+                    <AreaChart data={analyticsData.systemMetrics}>
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="month" />
                       <YAxis />
@@ -493,7 +477,7 @@ export default function AdminAnalyticsPage() {
                   </CardHeader>
                   <CardContent>
                     <ResponsiveContainer width="100%" height={300}>
-                      <BarChart data={riskMetrics}>
+                      <BarChart data={analyticsData.riskMetrics}>
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis dataKey="category" />
                         <YAxis />
@@ -502,7 +486,7 @@ export default function AdminAnalyticsPage() {
                       </BarChart>
                     </ResponsiveContainer>
                     <div className="mt-4 space-y-2">
-                      {riskMetrics.map((item, index) => (
+                      {analyticsData.riskMetrics.map((item: any, index: number) => (
                         <div key={index} className="flex items-center justify-between">
                           <div className="flex items-center space-x-2">
                             <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }} />
@@ -579,7 +563,7 @@ export default function AdminAnalyticsPage() {
 
             <TabsContent value="performance" className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {performanceMetrics.map((metric, index) => (
+                {analyticsData.performanceMetrics.map((metric: any, index: number) => (
                   <Card key={index} className="neumorphic border-0">
                     <CardHeader>
                       <CardTitle className="flex items-center justify-between">

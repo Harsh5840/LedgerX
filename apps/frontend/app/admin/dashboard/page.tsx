@@ -7,59 +7,51 @@ import { Sidebar } from "@/components/layout/sidebar"
 import { Navbar } from "@/components/layout/navbar"
 import { Users, AlertTriangle, RotateCcw, TrendingUp, Shield, Activity } from "lucide-react"
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts"
-
-const systemVolumeData = [
-  { month: "Jan", volume: 124000, transactions: 2400 },
-  { month: "Feb", volume: 139800, transactions: 1398 },
-  { month: "Mar", volume: 198000, transactions: 9800 },
-  { month: "Apr", volume: 139080, transactions: 3908 },
-  { month: "May", volume: 148000, transactions: 4800 },
-  { month: "Jun", volume: 138000, transactions: 3800 },
-]
-
-const riskData = [
-  { category: "Low Risk", count: 1247, color: "#64748b" },
-  { category: "Medium Risk", count: 234, color: "#94a3b8" },
-  { category: "High Risk", count: 89, color: "#cbd5e1" },
-  { category: "Critical", count: 12, color: "#e2e8f0" },
-]
-
-const flaggedTransactions = [
-  {
-    id: "TXN001",
-    user: "john.doe@email.com",
-    amount: 15000,
-    reason: "Large amount",
-    timestamp: "2024-01-15 14:30",
-    risk: "high",
-  },
-  {
-    id: "TXN002",
-    user: "jane.smith@email.com",
-    amount: 500,
-    reason: "Unusual pattern",
-    timestamp: "2024-01-15 13:45",
-    risk: "medium",
-  },
-  {
-    id: "TXN003",
-    user: "bob.wilson@email.com",
-    amount: 25000,
-    reason: "Velocity check",
-    timestamp: "2024-01-15 12:20",
-    risk: "critical",
-  },
-  {
-    id: "TXN004",
-    user: "alice.brown@email.com",
-    amount: 750,
-    reason: "Location anomaly",
-    timestamp: "2024-01-15 11:15",
-    risk: "medium",
-  },
-]
+import { useEffect, useState } from "react"
 
 export default function AdminDashboard() {
+  const [dashboardData, setDashboardData] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    setLoading(true)
+    setError(null)
+    const fetchDashboard = async () => {
+      try {
+        const token = localStorage.getItem("token")
+        const res = await fetch("http://localhost:5000/api/admin/dashboard", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        })
+        const data = await res.json()
+        if (data) {
+          setDashboardData(data)
+        } else {
+          setError("Failed to load dashboard data: Invalid response format.")
+        }
+      } catch (e) {
+        setError("Failed to load dashboard data.")
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchDashboard()
+  }, [])
+
+  if (loading) {
+    return <div className="text-center py-8">Loading...</div>
+  }
+
+  if (error) {
+    return <div className="text-center py-8 text-red-500">{error}</div>
+  }
+
+  if (!dashboardData) {
+    return <div className="text-center py-8">No data available.</div>
+  }
+
   return (
     <div className="flex h-screen bg-slate-50 dark:bg-slate-950">
       <Sidebar userRole="ADMIN" />
@@ -155,7 +147,7 @@ export default function AdminDashboard() {
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={300}>
-                  <LineChart data={systemVolumeData}>
+                  <LineChart data={dashboardData.systemVolumeData}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                     <XAxis dataKey="month" stroke="#64748b" />
                     <YAxis stroke="#64748b" />
@@ -184,7 +176,7 @@ export default function AdminDashboard() {
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={riskData}>
+                  <BarChart data={dashboardData.riskData}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                     <XAxis dataKey="category" stroke="#64748b" />
                     <YAxis stroke="#64748b" />
@@ -200,7 +192,7 @@ export default function AdminDashboard() {
                   </BarChart>
                 </ResponsiveContainer>
                 <div className="mt-4 grid grid-cols-2 gap-4">
-                  {riskData.map((item, index) => (
+                  {dashboardData.riskData.map((item: any, index: number) => (
                     <div
                       key={index}
                       className="flex items-center justify-between p-2 rounded bg-slate-50 dark:bg-slate-800"
@@ -227,7 +219,7 @@ export default function AdminDashboard() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {flaggedTransactions.map((transaction) => (
+                {dashboardData.flaggedTransactions.map((transaction: any) => (
                   <div
                     key={transaction.id}
                     className="flex items-center justify-between p-4 rounded-lg bg-slate-50 dark:bg-slate-800 border-l-4 border-l-red-500"

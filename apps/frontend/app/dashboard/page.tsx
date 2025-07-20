@@ -53,50 +53,77 @@ export default function UserDashboard() {
 
   useEffect(() => {
     async function fetchData() {
-      const txRes = await fetch("/api/transactions")
-      const txData = await txRes.json()
+      const token = localStorage.getItem("token");
+      const txRes = await fetch("http://localhost:5000/api/transactions/all", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const txData = await txRes.json();
 
-      setTransactions(txData)
+      if (!Array.isArray(txData)) {
+        // Handle error: API did not return an array (likely unauthorized or error response)
+        setTransactions([]);
+        setBalance(0);
+        setCategoryData([]);
+        setMonthlyData([]);
+        setRiskAlerts(0);
+        // Optionally, you can log or display an error message here
+        console.error("Failed to fetch transactions:", txData);
+        return;
+      }
+
+      setTransactions(txData);
 
       // Balance = sum of all transaction amounts
-      const totalBalance = txData.reduce((acc: number, tx: Transaction) => acc + tx.amount, 0)
-      setBalance(totalBalance)
+      const totalBalance = txData.reduce((acc: number, tx: Transaction) => acc + tx.amount, 0);
+      setBalance(totalBalance);
 
       // Category Breakdown
-      const categorySummary: CategorySummary = {}
+      const categorySummary: CategorySummary = {};
       txData.forEach((tx: Transaction) => {
-        categorySummary[tx.category] = (categorySummary[tx.category] || 0) + Math.abs(tx.amount)
-      })
+        categorySummary[tx.category] = (categorySummary[tx.category] || 0) + Math.abs(tx.amount);
+      });
 
-      const total = Object.values(categorySummary).reduce((a, b) => a + b, 0)
-      const colors = ["#64748b", "#94a3b8", "#cbd5e1", "#e2e8f0", "#f1f5f9"]
+      const total = Object.values(categorySummary).reduce((a, b) => a + b, 0);
+      const colors = ["#64748b", "#94a3b8", "#cbd5e1", "#e2e8f0", "#f1f5f9"];
       const formattedCategoryData = Object.entries(categorySummary).map(([key, value], i) => ({
         name: key,
         value: ((value / total) * 100).toFixed(1),
         color: colors[i % colors.length],
-      }))
-      setCategoryData(formattedCategoryData)
+      }));
+      setCategoryData(formattedCategoryData);
 
       // Monthly trend
-      const monthlyMap: { [key: string]: number } = {}
+      const monthlyMap: { [key: string]: number } = {};
       txData.forEach((tx: Transaction) => {
-        const month = new Date(tx.date).toLocaleString("default", { month: "short" })
-        monthlyMap[month] = (monthlyMap[month] || 0) + Math.abs(tx.amount)
-      })
+        // Only include expenses (negative amounts)
+        if (tx.amount < 0) {
+          const dateObj = new Date(tx.date);
+          const monthKey = `${dateObj.getFullYear()}-${dateObj.getMonth() + 1}`; // e.g., "2024-7"
+          monthlyMap[monthKey] = (monthlyMap[monthKey] || 0) + Math.abs(tx.amount);
+        }
+      });
 
-      const formattedMonthlyData = Object.entries(monthlyMap).map(([month, value]) => ({
-        month,
-        spending: parseFloat(value.toFixed(2)),
-      }))
-      setMonthlyData(formattedMonthlyData)
+      // Sort months chronologically
+      const sortedMonths = Object.keys(monthlyMap).sort();
+      const formattedMonthlyData = sortedMonths.map((monthKey) => {
+        const [year, month] = monthKey.split("-");
+        const monthName = new Date(Number(year), Number(month) - 1).toLocaleString("default", { month: "short" });
+        return {
+          month: `${monthName} ${year}`,
+          spending: parseFloat(monthlyMap[monthKey].toFixed(2)),
+        };
+      });
+      setMonthlyData(formattedMonthlyData);
 
       // Risk Alerts (basic rule: any tx > 1000 is "risky")
-      const alerts = txData.filter((tx: Transaction) => Math.abs(tx.amount) > 1000).length
-      setRiskAlerts(alerts)
+      const alerts = txData.filter((tx: Transaction) => Math.abs(tx.amount) > 1000).length;
+      setRiskAlerts(alerts);
     }
 
-    fetchData()
-  }, [])
+    fetchData();
+  }, []);
 
   return (
     <div className="flex h-screen bg-slate-50 dark:bg-slate-950">
@@ -118,7 +145,6 @@ export default function UserDashboard() {
               value={`$${monthlyData.at(-1)?.spending || 0}`}
               trend="down"
             />
-            <StatCard icon={<PieChart />} label="Uncategorized" value="12" />
             <StatCard
               icon={<AlertTriangle className="text-yellow-600" />}
               label="Risk Alerts"
@@ -127,15 +153,11 @@ export default function UserDashboard() {
             />
           </div>
 
-          {/* Charts Section */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-            <LineChartCard data={monthlyData} />
-            <PieChartCard data={categoryData} />
-          </div>
-
-          {/* Transactions & AI */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <RecentTransactions transactions={transactions.slice(0, 5)} />
+          {/* AI Assistant & Transactions Section (replace charts) */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+            <div className="lg:col-span-2">
+              <RecentTransactions transactions={transactions.slice(0, 5)} />
+            </div>
             <AssistantCard />
           </div>
         </main>
@@ -222,6 +244,11 @@ function PieChartCard({ data }) {
 }
 
 function RecentTransactions({ transactions }: { transactions: Transaction[] }) {
+  // Helper to determine if a transaction is an expense
+  function isExpense(tx: Transaction) {
+    return tx.amount < 0;
+  }
+
   return (
     <Card className="lg:col-span-2">
       <CardHeader>
@@ -229,46 +256,88 @@ function RecentTransactions({ transactions }: { transactions: Transaction[] }) {
         <CardDescription>Your latest financial activity</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        {transactions.map((tx) => (
-          <div key={tx.id} className="flex justify-between items-center bg-slate-50 dark:bg-slate-800 p-3 rounded-lg">
-            <div className="flex items-center space-x-3">
-              <div
-                className={`p-2 rounded-full ${
-                  tx.amount > 0 ? "bg-green-100 dark:bg-green-900" : "bg-red-100 dark:bg-red-900"
-                }`}
-              >
-                {tx.amount > 0 ? (
-                  <ArrowUpRight className="h-4 w-4 text-green-600" />
-                ) : (
-                  <ArrowDownRight className="h-4 w-4 text-red-600" />
-                )}
+        {transactions.map((tx) => {
+          const expense = isExpense(tx);
+          return (
+            <div key={tx.id} className="flex justify-between items-center bg-slate-50 dark:bg-slate-800 p-3 rounded-lg">
+              <div className="flex items-center space-x-3">
+                <div
+                  className={`p-2 rounded-full ${
+                    expense
+                      ? "bg-red-100 dark:bg-red-900"
+                      : "bg-green-100 dark:bg-green-900"
+                  }`}
+                >
+                  {expense ? (
+                    <ArrowUpRight className="h-4 w-4 text-red-600" />
+                  ) : (
+                    <ArrowDownRight className="h-4 w-4 text-green-600" />
+                  )}
+                </div>
+                <div>
+                  <p className="font-medium text-slate-900 dark:text-white">{tx.description}</p>
+                  <p className="text-sm text-slate-600 dark:text-slate-400">
+                    {tx.category} • {tx.date}
+                  </p>
+                </div>
               </div>
-              <div>
-                <p className="font-medium text-slate-900 dark:text-white">{tx.description}</p>
-                <p className="text-sm text-slate-600 dark:text-slate-400">
-                  {tx.category} • {tx.date}
+              <div className="text-right">
+                <p className={`font-semibold ${expense ? "text-red-600" : "text-green-600"}`}>
+                  {expense ? "-" : "+"}${Math.abs(tx.amount).toFixed(2)}
                 </p>
+                <Badge
+                  variant={tx.status === "completed" ? "default" : "secondary"}
+                  className="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
+                >
+                  {tx.status}
+                </Badge>
               </div>
             </div>
-            <div className="text-right">
-              <p className={`font-semibold ${tx.amount > 0 ? "text-green-600" : "text-red-600"}`}>
-                {tx.amount > 0 ? "+" : "-"}${Math.abs(tx.amount).toFixed(2)}
-              </p>
-              <Badge
-                variant={tx.status === "completed" ? "default" : "secondary"}
-                className="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
-              >
-                {tx.status}
-              </Badge>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </CardContent>
     </Card>
   )
 }
 
 function AssistantCard() {
+  const [input, setInput] = useState("")
+  const [response, setResponse] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const handleAsk = async () => {
+    setLoading(true)
+    setError(null)
+    setResponse(null)
+    try {
+      const token = localStorage.getItem("token")
+      const res = await fetch("http://localhost:5000/api/nlp/query", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ question: input }),
+      })
+      const data = await res.json()
+      if (data.success) {
+        setResponse(
+          data.total !== undefined
+            ? `Total: $${data.total}`
+            : data.categories
+            ? `Top categories: ${data.categories.map((c: any) => c.name + ' ($' + c.total + ')').join(', ')}`
+            : data.message || "No answer."
+        )
+      } else {
+        setResponse(data.message || "Sorry, I couldn't understand your question.")
+      }
+    } catch (e) {
+      setError("Failed to contact AI service.")
+    }
+    setLoading(false)
+  }
+
   return (
     <Card>
       <CardHeader>
@@ -278,15 +347,27 @@ function AssistantCard() {
       <CardContent>
         <div className="space-y-4">
           <div className="flex space-x-2">
-            <Input placeholder="What's my grocery spend this month?" className="flex-1" />
-            <Button size="icon">
+            <Input
+              placeholder="What's my grocery spend this month?"
+              className="flex-1"
+              value={input}
+              onChange={e => setInput(e.target.value)}
+              onKeyDown={e => { if (e.key === "Enter") handleAsk() }}
+              disabled={loading}
+            />
+            <Button size="icon" onClick={handleAsk} disabled={loading || !input}>
               <Send className="h-4 w-4" />
             </Button>
           </div>
-          <div className="p-3 bg-slate-50 dark:bg-slate-800 rounded-lg">
-            <p className="text-sm text-slate-700 dark:text-slate-300">
-              💡 Try asking: "Show my largest expenses this week" or "How much on entertainment?"
-            </p>
+          <div className="p-3 bg-slate-50 dark:bg-slate-800 rounded-lg min-h-[48px]">
+            {loading && <span className="text-sm text-slate-500">Thinking...</span>}
+            {error && <span className="text-sm text-red-500">{error}</span>}
+            {response && <span className="text-sm text-slate-700 dark:text-slate-300">{response}</span>}
+            {!response && !loading && !error && (
+              <p className="text-sm text-slate-700 dark:text-slate-300">
+                💡 Try asking: "Show my largest expenses this week" or "How much on entertainment?"
+              </p>
+            )}
           </div>
         </div>
       </CardContent>

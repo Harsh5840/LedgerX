@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -11,91 +11,39 @@ import { Search, Download, Eye, Clock, CheckCircle, XCircle, AlertTriangle } fro
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import Link from "next/link"
 
-// Mock reversal history data
-const reversalHistory = [
-  {
-    id: "REV001",
-    transactionId: "TXN001",
-    transactionHash: "abc123def456",
-    amount: 1250.0,
-    user: {
-      name: "John Doe",
-      email: "john.doe@email.com",
-    },
-    admin: {
-      name: "Admin User",
-      email: "admin@ledgerx.com",
-    },
-    reason: "Fraudulent transaction detected by user report",
-    status: "completed",
-    initiatedAt: "2024-01-15 15:30:22",
-    completedAt: "2024-01-15 15:32:45",
-    processingTime: "2m 23s",
-  },
-  {
-    id: "REV002",
-    transactionId: "TXN005",
-    transactionHash: "mno345pqr678",
-    amount: 89.99,
-    user: {
-      name: "Alice Brown",
-      email: "alice.brown@email.com",
-    },
-    admin: {
-      name: "Admin User",
-      email: "admin@ledgerx.com",
-    },
-    reason: "Duplicate charge - system error",
-    status: "processing",
-    initiatedAt: "2024-01-15 14:20:10",
-    completedAt: null,
-    processingTime: null,
-  },
-  {
-    id: "REV003",
-    transactionId: "TXN012",
-    transactionHash: "xyz789abc123",
-    amount: 2500.0,
-    user: {
-      name: "Bob Wilson",
-      email: "bob.wilson@email.com",
-    },
-    admin: {
-      name: "Senior Admin",
-      email: "senior.admin@ledgerx.com",
-    },
-    reason: "Merchant dispute - unauthorized charge",
-    status: "failed",
-    initiatedAt: "2024-01-14 16:45:33",
-    completedAt: "2024-01-14 16:47:12",
-    processingTime: "1m 39s",
-    failureReason: "Insufficient funds in merchant account",
-  },
-  {
-    id: "REV004",
-    transactionId: "TXN008",
-    transactionHash: "def456ghi789",
-    amount: 156.75,
-    user: {
-      name: "Jane Smith",
-      email: "jane.smith@email.com",
-    },
-    admin: {
-      name: "Admin User",
-      email: "admin@ledgerx.com",
-    },
-    reason: "User requested refund within policy period",
-    status: "completed",
-    initiatedAt: "2024-01-14 11:15:44",
-    completedAt: "2024-01-14 11:18:22",
-    processingTime: "2m 38s",
-  },
-]
-
 export default function ReversalHistoryPage() {
+  const [reversalHistory, setReversalHistory] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
   const [dateFilter, setDateFilter] = useState("all")
+
+  useEffect(() => {
+    setLoading(true)
+    setError(null)
+    const fetchReversals = async () => {
+      try {
+        const token = localStorage.getItem("token")
+        const res = await fetch("http://localhost:5000/api/reversal/history", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        })
+        const data = await res.json()
+        if (Array.isArray(data)) {
+          setReversalHistory(data)
+        } else {
+          setError("Failed to load reversal history: Invalid response format.")
+        }
+      } catch (e) {
+        setError("Failed to load reversal history.")
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchReversals()
+  }, [])
 
   const filteredReversals = reversalHistory.filter((reversal) => {
     const matchesSearch =
