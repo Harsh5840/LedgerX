@@ -94,17 +94,39 @@ export default function TransactionReversalPage() {
     setIsProcessing(true)
     setShowConfirmDialog(false)
 
-    // Simulate reversal process
-    setTimeout(() => {
-      toast({
-        title: "Reversal Initiated Successfully",
-        description: `Transaction ${transaction.id} reversal has been processed and logged`,
+    try {
+      const token = localStorage.getItem("token")
+      const res = await fetch(`http://localhost:5000/api/reversal/${transaction.hash}/reverse`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ reason: reversalReason, adminPassword }),
       })
-
-      // In real app, would redirect to reversal confirmation page
-      router.push("/admin/transactions")
+      const data = await res.json()
+      if (res.ok) {
+        toast({
+          title: "Reversal Initiated Successfully",
+          description: `Transaction ${transaction.id} reversal has been processed and logged`,
+        })
+        router.push("/admin/transactions")
+      } else {
+        toast({
+          title: "Reversal Failed",
+          description: data?.error || "Failed to reverse transaction.",
+          variant: "destructive",
+        })
+      }
+    } catch (e) {
+      toast({
+        title: "Reversal Failed",
+        description: "Failed to contact server.",
+        variant: "destructive",
+      })
+    } finally {
       setIsProcessing(false)
-    }, 3000)
+    }
   }
 
   if (loading) {

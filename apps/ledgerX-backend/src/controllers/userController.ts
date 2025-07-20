@@ -83,3 +83,8 @@ export const getUser = async (req: Request, res: Response) => {
   console.log("hiiiiiiiiii");
   res.json( { user: { id: user.id, email: user.email, role: user.role } });
 };
+
+export const getAllUser = async (req: Request, res: Response) => {
+  const users = await prisma.user.findMany();
+  res.json(users);
+};
