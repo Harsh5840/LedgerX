@@ -2,7 +2,7 @@
 
 import { Request, Response } from "express";
 import { assessRisk } from "../services/riskService";
-import { LedgerEntry } from "@ledgerx/core";
+import { LedgerEntry } from "@ledgerX/core";
 
 export const handleRiskAssessment = async (req: Request, res: Response) => {
   try {

@@ -2,14 +2,13 @@ import { parseQuery } from "./nlp";
 import { prisma } from "@ledgerX/db/src/client";
 import { ruleBasedScore } from "./rules";
 import { mlRiskScore } from "./model";
-import { LedgerEntry } from "@ledgerx/core";
+import { LedgerEntry } from "@ledgerX/types";
 
 // --- 1. Handle natural language queries ---
 export async function executeUserQuery(query: string, userId: string) {
   const parsed = parseQuery(query);
 
   if (!parsed || parsed.intent === "UNKNOWN") {
-    console.warn(`Unrecognized query from user ${userId}: "${query}"`);
     return "Sorry, I couldn't understand your question.";
   }
 

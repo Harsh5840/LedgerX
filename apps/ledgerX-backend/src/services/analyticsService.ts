@@ -5,7 +5,7 @@ import {
   getTopSpendingCategories,
   evaluateAnomaly,
 } from "@ledgerX/ai/src/executor";
-import { LedgerEntry } from "@ledgerx/core";
+import { LedgerEntry } from "@ledgerX/core";
 
 const FiltersSchema = z.object({
   userId: z.string().optional(),

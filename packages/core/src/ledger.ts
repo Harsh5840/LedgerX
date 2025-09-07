@@ -4,13 +4,7 @@ import {
   LedgerEntryInput,
   Transaction,
   TransactionInput
-} from './types';
-
-import {
-  classifyCategory,
-  ruleBasedScore,
-  mlRiskScore,
-} from '@ledgerX/ai';
+} from '@ledgerX/types';
 
 /**
  * Generates a cryptographic hash for a ledger entry input.
@@ -21,21 +15,24 @@ export function generateHash(entry: LedgerEntryInput): string {
 }
 
 /**
- * Calculates combined risk score using rule-based, ML, and isolation forest approaches.
+ * Basic risk score calculation (AI functions will be called from backend)
  */
-async function calculateRiskScore(entry: LedgerEntry): Promise<{
+function calculateBasicRiskScore(entry: LedgerEntry): {
   score: number;
   isSuspicious: boolean;
-}> {
-  const [ruleScore, mlScore] = await Promise.all([
-    ruleBasedScore(entry),
-    mlRiskScore(entry),
-  ]);
+} {
+  let score = 0;
+  
+  // Basic rule-based scoring
+  if (entry.amount > 50000) score += 40;
+  if (entry.isReversal) score += 10;
+  
+  const hour = new Date(entry.timestamp).getHours();
+  if (hour < 6 || hour > 22) score += 20;
 
-  const totalScore = ruleScore + mlScore;
   return {
-    score: totalScore,
-    isSuspicious: totalScore >= 60
+    score,
+    isSuspicious: score >= 60
   };
 }
 
@@ -56,7 +53,7 @@ export async function createEntry(
     prevHash: entry.prevHash
   };
 
-  const classifiedCategory = category ?? (await classifyCategory(input));
+  const classifiedCategory = category ?? 'general';
   const hash = generateHash(input);
 
   const baseEntry: LedgerEntry = {
@@ -66,7 +63,7 @@ export async function createEntry(
     category: classifiedCategory
   };
 
-  const { score, isSuspicious } = await calculateRiskScore(baseEntry);
+  const { score, isSuspicious } = calculateBasicRiskScore(baseEntry);
 
   return {
     ...baseEntry,
@@ -76,7 +73,7 @@ export async function createEntry(
 }
 
 /**
- * Creates a full double-entry transaction (debit & credit) with classification + scoring.
+ * Creates a full double-entry transaction (debit & credit) with basic scoring.
  */
 export async function createTransaction(
   input: TransactionInput & {

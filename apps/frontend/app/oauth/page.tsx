@@ -1,11 +1,11 @@
 // app/oauth/page.tsx
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 
-export default function OAuthHandler() {
+function OAuthHandlerInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
@@ -31,4 +31,12 @@ export default function OAuthHandler() {
   }, [searchParams, router, toast]);
 
   return <p className="text-center mt-20">Processing login...</p>;
+}
+
+export default function OAuthHandler() {
+  return (
+    <Suspense fallback={<p className="text-center mt-20">Loading...</p>}>
+      <OAuthHandlerInner />
+    </Suspense>
+  );
 }

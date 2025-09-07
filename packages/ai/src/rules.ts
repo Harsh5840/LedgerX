@@ -1,4 +1,4 @@
-import { LedgerEntry } from "@ledgerX/core";
+import { LedgerEntry } from "@ledgerX/types";
 
 const suspiciousAccounts = ['unknown', 'temp', 'misc'];
 

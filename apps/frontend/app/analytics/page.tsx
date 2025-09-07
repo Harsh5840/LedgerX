@@ -61,32 +61,25 @@ export default function AnalyticsPage() {
           ...config,
         });
         setTotal(totalRes.data.total);
-        console.log(totalRes.data.total);
-
         // Top Categories
         const catRes = await axios.get("http://localhost:5000/api/analytics/top-categories", {
           params: { month, year }, // userId removed
           ...config,
         });
         setTopCategories(catRes.data.categories);
-        console.log(catRes.data.categories);
-
         // Monthly Trend (usually for all months, but you can filter if needed)
         const trendRes = await axios.get("http://localhost:5000/api/analytics/monthly-trend", {
           params: {}, // userId removed
           ...config,
         });
         setMonthlyTrend(trendRes.data.trend);
-        console.log(trendRes.data.trend);
         // Flagged/Risky
         const flaggedRes = await axios.get("http://localhost:5000/api/analytics/flagged", {
           params: {}, // userId removed
           ...config,
         });
         setFlagged(flaggedRes.data.flagged);
-        console.log(flaggedRes.data.flagged);
-      } catch (err: any) {
-        console.log("Error fetching analytics:", err);
+        } catch (err: any) {
         setError("Could not fetch analytics data.");
         toast({
           title: "Error loading analytics",
@@ -97,7 +90,6 @@ export default function AnalyticsPage() {
         setLoading(false);
       }
     }
-    console.log("token", token);
     if (token) fetchAnalytics();
   }, [token, timeRange]);
 

@@ -1,14 +1,6 @@
-# Turborepo starter
+# LedgerX
 
-This Turborepo starter is maintained by the Turborepo core team.
-
-## Using this example
-
-Run the following command:
-
-```sh
-npx create-turbo@latest
-```
+A comprehensive blockchain-based ledger system with AI-powered risk assessment and fraud detection.
 
 ## What's inside?
 
@@ -16,11 +8,14 @@ This Turborepo includes the following packages/apps:
 
 ### Apps and Packages
 
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
+- `ledgerx-frontend`: a [Next.js](https://nextjs.org/) frontend application
+- `ledgerx-backend`: an Express.js backend API server
+- `@ledgerX/types`: shared TypeScript type definitions
+- `@ledgerX/core`: core ledger functionality and blockchain operations
+- `@ledgerX/ai`: AI-powered risk assessment and fraud detection
+- `@ledgerX/db`: database models and Prisma configuration
+- `@repo/eslint-config`: ESLint configurations
+- `@repo/typescript-config`: TypeScript configurations
 
 Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
 
@@ -32,12 +27,23 @@ This Turborepo has some additional tools already setup for you:
 - [ESLint](https://eslint.org/) for code linting
 - [Prettier](https://prettier.io) for code formatting
 
+## Setup
+
+1. Clone the repository
+2. Install dependencies: `pnpm install`
+3. Copy environment files and configure:
+   ```bash
+   cp apps/ledgerX-backend/.env.example apps/ledgerX-backend/.env
+   cp packages/ai/.env.example packages/ai/.env
+   cp packages/db/.env.example packages/db/.env
+   ```
+4. Configure your database and API keys in the `.env` files
+
 ### Build
 
 To build all apps and packages, run the following command:
 
-```
-cd my-turborepo
+```bash
 pnpm build
 ```
 
@@ -45,8 +51,7 @@ pnpm build
 
 To develop all apps and packages, run the following command:
 
-```
-cd my-turborepo
+```bash
 pnpm dev
 ```
 

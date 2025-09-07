@@ -166,7 +166,13 @@ export default function UserDashboard() {
   )
 }
 
-function StatCard({ icon, label, value, trend = "neutral", color = "text-green-600" }) {
+function StatCard({ icon, label, value, trend = "neutral", color = "text-green-600" }: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  trend?: "up" | "down" | "neutral";
+  color?: string;
+}) {
   const Icon = trend === "up" ? TrendingUp : trend === "down" ? TrendingDown : null
   return (
     <Card className="hover:shadow-lg transition-shadow">

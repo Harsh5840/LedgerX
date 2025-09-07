@@ -4,9 +4,11 @@
   "description": "",
   "main": "src/index.ts",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "vitest run",
     "build": "tsc --build",
-    "dev": "tsc --watch"
+    "dev": "tsc --watch",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
   },
   "keywords": [],
   "author": "",
@@ -16,7 +18,7 @@
     "@langchain/core": "^0.3.62",
     "@langchain/google-genai": "^0.2.14",
     "@langchain/openai": "^0.5.18",
-    "@ledgerX/core": "workspace:*",
+    "@ledgerX/types": "workspace:*",
     "@ledgerX/db": "workspace:*",
     "@repo/typescript-config": "workspace:*",
     "axios": "^1.10.0",
@@ -27,6 +29,8 @@
     "zod": "^3.24.1"
   },
   "devDependencies": {
-    "@types/node": "^24.0.3"
+    "@types/node": "^24.0.3",
+    "vitest": "^1.0.0",
+    "@vitest/coverage-v8": "^1.0.0"
   }
 }

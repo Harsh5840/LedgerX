@@ -4,20 +4,24 @@
   "description": "",
   "main": "index.ts",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "vitest run",
     "build": "tsc --build",
-    "dev": "tsc --watch"
+    "dev": "tsc --watch",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@ledgerX/types": "workspace:*",
     "crypto": "^1.0.1",
     "typescript": "^5.8.3",
-    "@repo/typescript-config": "workspace:*",
-    "@ledgerX/ai": "workspace:*"
+    "@repo/typescript-config": "workspace:*"
   },
   "devDependencies": {
-    "@types/node": "^24.0.1"
+    "@types/node": "^24.0.1",
+    "vitest": "^1.0.0",
+    "@vitest/coverage-v8": "^1.0.0"
   }
 }

@@ -34,19 +34,32 @@ export default function AdminTransactionsPage() {
     const fetchTransactions = async () => {
       try {
         const token = localStorage.getItem("token")
+        if (!token) {
+          setError("Authentication required. Please log in.")
+          return
+        }
+
         const res = await fetch("http://localhost:5000/api/transactions/all", {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         })
+        
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}: ${res.statusText}`)
+        }
+        
         const data = await res.json()
         if (Array.isArray(data)) {
           setTransactions(data)
+        } else if (data.error) {
+          setError(`API Error: ${data.error}`)
         } else {
           setError("Failed to load transactions: Invalid response format.")
         }
       } catch (e) {
-        setError("Failed to load transactions.")
+        console.error("Error fetching transactions:", e)
+        setError(`Failed to load transactions: ${e instanceof Error ? e.message : 'Unknown error'}`)
       } finally {
         setLoading(false)
       }
@@ -211,18 +224,30 @@ export default function AdminTransactionsPage() {
               <CardDescription>{filteredTransactions.length} transactions found</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {loading && (
-                  <div className="text-center py-12">
-                    <p className="text-muted-foreground">Loading transactions...</p>
-                  </div>
-                )}
-                {error && (
-                  <div className="text-center py-12 text-red-500">
-                    <p>{error}</p>
-                  </div>
-                )}
-                {!loading && !error && filteredTransactions.map((transaction) => (
+              {loading && (
+                <div className="text-center py-12">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                  <p className="text-muted-foreground mt-4">Loading transactions...</p>
+                </div>
+              )}
+              
+              {error && (
+                <div className="text-center py-12">
+                  <div className="text-red-500 mb-4">⚠️ Error</div>
+                  <p className="text-muted-foreground">{error}</p>
+                  <Button 
+                    variant="outline" 
+                    className="mt-4"
+                    onClick={() => window.location.reload()}
+                  >
+                    Retry
+                  </Button>
+                </div>
+              )}
+
+              {!loading && !error && (
+                <div className="space-y-4">
+                  {filteredTransactions.map((transaction) => (
                   <div
                     key={transaction.id}
                     className="flex items-center justify-between p-4 rounded-lg bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
@@ -314,10 +339,11 @@ export default function AdminTransactionsPage() {
                       </div>
                     </div>
                   </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
 
-              {filteredTransactions.length === 0 && !loading && !error && (
+              {!loading && !error && filteredTransactions.length === 0 && (
                 <div className="text-center py-12">
                   <p className="text-muted-foreground">No transactions found matching your criteria</p>
                 </div>

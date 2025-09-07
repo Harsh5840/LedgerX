@@ -1,0 +1,42 @@
+version: "3.9"
+services:
+  db:
+    image: postgres:15
+    restart: always
+    environment:
+      POSTGRES_USER: ledgerx
+      POSTGRES_PASSWORD: ledgerx
+      POSTGRES_DB: ledgerx
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  backend:
+    build:
+      context: .
+      dockerfile: apps/ledgerX-backend/Dockerfile
+    environment:
+      DATABASE_URL: postgres://ledgerx:ledgerx@db:5432/ledgerx
+      NODE_ENV: production
+    depends_on:
+      - db
+    ports:
+      - "5000:5000"
+    restart: always
+
+  frontend:
+    build:
+      context: .
+      dockerfile: apps/frontend/Dockerfile
+    environment:
+      NODE_ENV: production
+      NEXT_PUBLIC_API_URL: http://localhost:5000
+    depends_on:
+      - backend
+    ports:
+      - "3000:3000"
+    restart: always
+
+volumes:
+  pgdata: 

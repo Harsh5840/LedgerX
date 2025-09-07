@@ -218,7 +218,6 @@ export default function TransactionsPage() {
       setError(null)
       const token = localStorage.getItem("token")
       if (!token) {
-        console.log("Missing JWT token");
         throw new Error("Missing JWT token");
       }
 
@@ -228,12 +227,8 @@ export default function TransactionsPage() {
         },
       })
 
-      console.log("Fetched transactions:", res.data)
       if (res.data && res.data.length > 0) {
-        console.log("First transaction sample:", res.data[0])
-        console.log("First transaction keys:", Object.keys(res.data[0]))
-        console.log("Description field value:", res.data[0].description)
-        console.log("All fields in first transaction:", JSON.stringify(res.data[0], null, 2))
+        // Data loaded successfully
       }
       setTransactions(res.data)
     } catch (err: any) {
@@ -241,7 +236,6 @@ export default function TransactionsPage() {
       const errorMessage = err.response?.status === 404 
         ? "No transactions found for this user"
         : "Could not fetch transaction data. Please ensure you're logged in."
-      console.log("Error message:", errorMessage)
       setError(errorMessage)
       toast({
         title: "Error loading transactions",

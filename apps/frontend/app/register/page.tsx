@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useEffect, useState } from "react"
+import { useEffect, useState, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -14,7 +14,7 @@ import Link from "next/link"
 import { useToast } from "@/hooks/use-toast"
 import axios from "axios"
 
-export default function RegisterPage() {
+function RegisterPageInner() {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -83,7 +83,6 @@ export default function RegisterPage() {
 
       localStorage.setItem("token", res.data.token);
       localStorage.setItem("user", JSON.stringify(res.data.user));
-      console.log("User saved to localStorage:", localStorage.getItem("user"));
 
       toast({
         title: "Account created",
@@ -203,5 +202,13 @@ export default function RegisterPage() {
         </CardContent>
       </Card>
     </div>
+  )
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <RegisterPageInner />
+    </Suspense>
   )
 }

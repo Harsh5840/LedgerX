@@ -1,6 +1,6 @@
 // apps/backend/src/services/riskService.ts
 
-import { LedgerEntry } from "@ledgerx/core";
+import { LedgerEntry } from "@ledgerX/core";
 import { analyzeFraud } from "./fraudService";
 import { ruleBasedScore } from "@ledgerx/ai";
 

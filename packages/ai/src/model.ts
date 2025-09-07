@@ -1,4 +1,4 @@
-import { LedgerEntry } from "@ledgerx/core";
+import { LedgerEntry } from "@ledgerX/types";
 
 export const HIGH_AMOUNT_THRESHOLD = 100000;
 export const CATEGORY_PENALTY = 20;

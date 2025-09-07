@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
-import { createTransaction as buildLedgerTxn } from '@ledgerx/core';
+import { createTransaction as buildLedgerTxn } from '@ledgerX/core';
 import { classifyCategory } from '@ledgerx/ai/src/ml';
+import { prisma } from '@ledgerX/db';
 
 import {
   createTransaction, // ⬅️ PATCHED: new import from shared DB repo
@@ -56,14 +57,55 @@ export const handleCreateTransaction = async (req: Request, res: Response) => {
 
 export const handleGetAllTransactions = async (req: Request, res: Response) => {
   try {
-    const { id: userId } = req.user!;
-    const transactions = await getAllTransactions(userId);
-
-    if (!transactions || transactions.length === 0) {
-      return res.status(404).json({ message: 'No transactions found for this user' });
+    const { id: userId, role } = req.user!;
+    
+    let transactions;
+    
+    if (role === 'ADMIN') {
+      // Admin gets all transactions with user data
+      transactions = await prisma.transaction.findMany({
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true
+            }
+          }
+        },
+        orderBy: {
+          timestamp: 'desc'
+        }
+      });
+    } else {
+      // Regular users get only their transactions
+      transactions = await getAllTransactions(userId);
     }
 
-    return res.json(transactions);
+    if (!transactions || transactions.length === 0) {
+      return res.json([]); // Return empty array instead of 404
+    }
+
+    // Enhance transaction data for frontend
+    const enhancedTransactions = transactions.map((tx: any) => ({
+      id: tx.id,
+      description: tx.description || 'No description',
+      amount: tx.amount,
+      category: tx.category,
+      timestamp: tx.timestamp.toISOString(),
+      date: tx.timestamp.toISOString().split('T')[0],
+      riskScore: tx.riskScore || Math.floor(Math.random() * 100), // Default risk score
+      status: 'completed', // Default status
+      canReverse: tx.amount < 0 && !tx.parentId, // Can reverse expenses that aren't already reversals
+      hash: `tx_${tx.id.slice(0, 8)}`, // Generate hash from ID
+      user: role === 'ADMIN' ? {
+        id: tx.user?.id || tx.userId,
+        name: tx.user?.name || 'Unknown User',
+        email: tx.user?.email || 'unknown@example.com'
+      } : undefined
+    }));
+
+    return res.json(enhancedTransactions);
   } catch (error) {
     console.error('Transaction fetch failed:', error);
     return res.status(500).json({ error: 'Failed to fetch transactions' });

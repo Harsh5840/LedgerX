@@ -42,5 +42,4 @@ app.use((err: any, req: express.Request, res: express.Response, _next: express.N
 // 🎯 Start server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
-});
+  });

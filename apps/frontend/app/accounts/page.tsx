@@ -85,8 +85,7 @@ const AccountsPage = () => {
       setLoading(true);
       setError(null);
       const response = await axios.get('http://localhost:5000/api/accounts/me', getAxiosConfig());
-      // console.log(response.data);
-      setAccounts(Array.isArray(response.data) ? response.data : response.data.accounts);
+      // setAccounts(Array.isArray(response.data) ? response.data : response.data.accounts);
     } catch (err) {
       const errorMessage = axios.isAxiosError(err) 
         ? err.response?.data?.message || err.message 
@@ -121,7 +120,7 @@ const AccountsPage = () => {
         ...(Array.isArray(prev) ? prev : []),
         response.data.account
       ]);
-      console.log('Updated accounts:', accounts); // <-- Add this line
+      // <-- Add this line
       setNewAccount({ name: '', type: 'WALLET' });
       setCreateModalOpen(false);
       

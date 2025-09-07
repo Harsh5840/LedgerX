@@ -2,7 +2,8 @@
   "compilerOptions": {
     "lib": ["dom", "dom.iterable", "esnext"],
     "allowJs": true,
-    "target": "ES6",
+    "target": "ESNext",
+    "types": ["@types/node", "@types/react", "@types/react-dom", "@types/next"],
     "skipLibCheck": true,
     "strict": true,
     "noEmit": true,

@@ -1,4 +1,4 @@
-import { prisma } from "@ledgerx/db";
+import { prisma } from "@ledgerX/db";
 import { Transaction as LedgerXTransaction } from "@ledgerX/core";
 import {
   addTransactionFromCore,
@@ -20,8 +20,6 @@ export async function createTransaction(tx: LedgerXTransaction) {
  */
 export async function getAllTransactions(userId: string) {
   const transactions = await fetchUserTransactions(userId);
-  console.log("transactions", transactions);
-
   return transactions.map((txn) => {
     const debit = txn.ledgerEntries.find((e) => e.type === "debit");
     const credit = txn.ledgerEntries.find((e) => e.type === "credit");
