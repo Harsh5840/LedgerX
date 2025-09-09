@@ -1,0 +1,123 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  NODE_VERSION: "18"
+  PNPM_VERSION: "9.0.0"
+
+jobs:
+  # CI - Code Quality & Testing
+  ci:
+    name: Continuous Integration
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Type checking
+        run: pnpm run check-types
+
+      - name: Linting
+        run: pnpm run lint
+
+      - name: Run tests
+        run: pnpm run test
+
+      - name: Build applications
+        run: pnpm run build
+
+  # CD - Deploy to AWS via SSH
+  deploy:
+    name: Deploy to AWS
+    runs-on: ubuntu-latest
+    needs: ci
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.AWS_SSH_PRIVATE_KEY }}" > ~/.ssh/aws_key
+          chmod 600 ~/.ssh/aws_key
+          ssh-keyscan -H ${{ secrets.AWS_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Deploy to AWS EC2
+        run: |
+          # Create deployment script
+          cat > deploy.sh << 'EOF'
+          #!/bin/bash
+          set -e
+          
+          echo "🚀 Starting deployment..."
+          
+          # Navigate to app directory
+          cd /home/ubuntu/ledgerx
+          
+          # Pull latest code
+          git fetch origin
+          git reset --hard origin/main
+          
+          # Stop current services
+          docker-compose -f docker-compose.prod.yml down || true
+          
+          # Build and start services
+          docker-compose -f docker-compose.prod.yml up -d --build
+          
+          # Clean up
+          docker system prune -f
+          
+          echo "✅ Deployment completed!"
+          EOF
+          
+          # Copy and execute deployment script
+          scp -i ~/.ssh/aws_key deploy.sh ubuntu@${{ secrets.AWS_HOST }}:/tmp/
+          ssh -i ~/.ssh/aws_key ubuntu@${{ secrets.AWS_HOST }} "chmod +x /tmp/deploy.sh && /tmp/deploy.sh"
+
+      - name: Health check
+        run: |
+          sleep 30
+          curl -f http://${{ secrets.AWS_HOST }}:3000 || exit 1
+
+      - name: Deployment notification
+        if: always()
+        run: |
+          if [ "${{ job.status }}" == "success" ]; then
+            echo "✅ Deployment to AWS successful!"
+          else
+            echo "❌ Deployment to AWS failed!"
+          fi

@@ -1,26 +1,6 @@
 version: "3.9"
 
 services:
-  # Database Service
-  db:
-    image: postgres:15
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: ledgerx
-      POSTGRES_PASSWORD: ledgerx
-      POSTGRES_DB: ledgerx
-    ports:
-      - "5432:5432"
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-    networks:
-      - ledgerx-network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ledgerx"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-
   # Backend API Service
   backend:
     build:
@@ -29,27 +9,31 @@ services:
     restart: unless-stopped
     environment:
       # Database Configuration
-      DATABASE_URL: ${DATABASE_URL:-postgres://ledgerx:ledgerx@db:5432/ledgerx}
-
+      DATABASE_URL: ${DATABASE_URL}
+      GLOBAL_DATABASE_URL: ${GLOBAL_DATABASE_URL}
+      
       # Environment
-      NODE_ENV: ${NODE_ENV:-production}
+      NODE_ENV: production
       PORT: 5000
-
+      APP_ENV: ${APP_ENV:-production}
+      
       # Security
-      JWT_SECRET: ${JWT_SECRET:-your_jwt_secret_here}
-      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-your_nextauth_secret_here}
-      GLOBAL_ENCRYPTION_KEY: ${GLOBAL_ENCRYPTION_KEY:-your_encryption_key_here}
-
+      JWT_SECRET: ${JWT_SECRET}
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
+      GLOBAL_JWT_SECRET: ${GLOBAL_JWT_SECRET}
+      GLOBAL_ENCRYPTION_KEY: ${GLOBAL_ENCRYPTION_KEY}
+      
       # CORS Configuration
-      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3000,http://frontend:3000}
-
+      CORS_ORIGIN: ${CORS_ORIGIN}
+      GLOBAL_ALLOWED_ORIGINS: ${GLOBAL_ALLOWED_ORIGINS}
+      
       # AI/ML Service Configuration
       HUGGINGFACE_API_TOKEN: ${HUGGINGFACE_API_TOKEN}
       GOOGLE_API_KEY: ${GOOGLE_API_KEY}
       SHARED_GOOGLE_API_KEY: ${SHARED_GOOGLE_API_KEY}
       OPENAI_API_KEY: ${OPENAI_API_KEY}
       SHARED_OPENAI_API_KEY: ${SHARED_OPENAI_API_KEY}
-
+      
       # OAuth Configuration
       GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID}
       GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET}
@@ -57,33 +41,37 @@ services:
       GITHUB_SECRET: ${GITHUB_SECRET}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
-
+      
       # Logging
       LOG_LEVEL: ${LOG_LEVEL:-info}
       LOG_DIR: ${LOG_DIR:-./logs}
       ENABLE_STRUCTURED_LOGGING: ${ENABLE_STRUCTURED_LOGGING:-true}
-
+      
       # Redis Configuration
-      GLOBAL_REDIS_URL: ${GLOBAL_REDIS_URL:-redis://localhost:6379}
+      GLOBAL_REDIS_URL: ${GLOBAL_REDIS_URL}
       GLOBAL_REDIS_PASSWORD: ${GLOBAL_REDIS_PASSWORD}
-
+      
       # Feature Flags
       ENABLE_FEATURE_FLAGS: ${ENABLE_FEATURE_FLAGS:-true}
       FEATURE_FLAG_SERVICE_URL: ${FEATURE_FLAG_SERVICE_URL}
-
+      
       # Rate Limiting
       GLOBAL_RATE_LIMIT_ENABLED: ${GLOBAL_RATE_LIMIT_ENABLED:-true}
       GLOBAL_RATE_LIMIT_WINDOW: ${GLOBAL_RATE_LIMIT_WINDOW:-900000}
       GLOBAL_RATE_LIMIT_MAX: ${GLOBAL_RATE_LIMIT_MAX:-1000}
-
+      
       # Monitoring
       SENTRY_DSN: ${SENTRY_DSN}
       NEW_RELIC_LICENSE_KEY: ${NEW_RELIC_LICENSE_KEY}
       DATADOG_API_KEY: ${DATADOG_API_KEY}
+      
+      # Backup Configuration
+      BACKUP_ENABLED: ${BACKUP_ENABLED:-false}
+      BACKUP_S3_BUCKET: ${BACKUP_S3_BUCKET}
+      BACKUP_S3_REGION: ${BACKUP_S3_REGION}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
 
-    depends_on:
-      db:
-        condition: service_healthy
     ports:
       - "5000:5000"
     volumes:
@@ -105,28 +93,27 @@ services:
     restart: unless-stopped
     environment:
       # Environment
-      NODE_ENV: ${NODE_ENV:-production}
+      NODE_ENV: production
       HOSTNAME: "0.0.0.0"
       PORT: 3000
-
+      
       # API Configuration
-      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:5000}
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
       BACKEND_URL: ${BACKEND_URL:-http://backend:5000}
-
+      
       # OAuth Configuration (for NextAuth)
       GITHUB_ID: ${GITHUB_ID}
       GITHUB_SECRET: ${GITHUB_SECRET}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
-      NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}
-
+      NEXTAUTH_URL: ${NEXTAUTH_URL}
+      
       # Security
       JWT_SECRET: ${JWT_SECRET}
-
+      
     depends_on:
-      backend:
-        condition: service_healthy
+      - backend
     ports:
       - "3000:3000"
     networks:
@@ -139,7 +126,6 @@ services:
       start_period: 40s
 
 volumes:
-  pgdata:
   logs:
 
 networks:
