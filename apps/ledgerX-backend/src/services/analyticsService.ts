@@ -66,7 +66,7 @@ export const getTopCategoriesWithFilters = async (
     take: limit,
   });
 
-  return results.map((r) => ({
+  return results.map((r: any) => ({
     category: r.category ?? "uncategorized",
     total: r._sum.amount ?? 0,
   }));

@@ -97,10 +97,10 @@ export const getAllUser = async (req: Request, res: Response) => {
     });
 
     // Enhance user data with computed fields for admin view
-    const enhancedUsers = users.map(user => {
-      const totalVolume = user.transactions.reduce((sum, tx) => sum + Math.abs(tx.amount), 0);
+    const enhancedUsers = users.map((user: any) => {
+      const totalVolume = user.transactions.reduce((sum: number, tx: any) => sum + Math.abs(tx.amount), 0);
       const avgRiskScore = user.transactions.length > 0 
-        ? user.transactions.reduce((sum, tx) => sum + (tx.riskScore || 0), 0) / user.transactions.length 
+        ? user.transactions.reduce((sum: number, tx: any) => sum + (tx.riskScore || 0), 0) / user.transactions.length 
         : 0;
 
       return {

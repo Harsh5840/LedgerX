@@ -4,7 +4,7 @@ import {
   addTransactionFromCore,
   reverseTransaction as reverseTxFromDB,
   getAllTransactions as fetchUserTransactions,
-} from "@ledgerx/db/repo/transaction";
+} from "@ledgerX/db/repo/transaction";
 
 const MAX_REVERSAL_AGE_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
 
@@ -20,9 +20,9 @@ export async function createTransaction(tx: LedgerXTransaction) {
  */
 export async function getAllTransactions(userId: string) {
   const transactions = await fetchUserTransactions(userId);
-  return transactions.map((txn) => {
-    const debit = txn.ledgerEntries.find((e) => e.type === "debit");
-    const credit = txn.ledgerEntries.find((e) => e.type === "credit");
+  return transactions.map((txn: any) => {
+    const debit = txn.ledgerEntries.find((e: any) => e.type === "debit");
+    const credit = txn.ledgerEntries.find((e: any) => e.type === "credit");
 
     let reasons: string[] = [];
     const reasonsStr = typeof txn.reasons === 'string' ? txn.reasons : '';

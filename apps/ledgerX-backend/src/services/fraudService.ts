@@ -1,7 +1,7 @@
 // apps/backend/src/services/fraudService.ts
 
 import { LedgerEntry } from "@ledgerX/core";
-import { mlRiskScore } from "@ledgerx/ai";
+import { mlRiskScore } from "@ledgerX/ai";
 
 // Configurable thresholds via ENV
 const RISK_THRESHOLD = parseInt(process.env.RISK_THRESHOLD || "50", 10);

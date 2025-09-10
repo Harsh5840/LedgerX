@@ -1,7 +1,7 @@
 // db/repo/ledger.ts
 
 import { PrismaClient, Prisma, LedgerEntry } from "@prisma/client";
-import { Transaction } from "@ledgerX/core/src/types"; // Ideally use a shared types barrel import
+import { Transaction } from "@ledgerX/core";
 const prisma = new PrismaClient();
 
 /**
