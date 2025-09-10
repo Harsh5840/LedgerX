@@ -1,12 +1,12 @@
 import { Request, Response } from 'express';
 import { createTransaction as buildLedgerTxn } from '@ledgerX/core';
-import { classifyCategory } from '@ledgerx/ai/src/ml';
+import { classifyCategory } from '@ledgerX/ai/src/ml';
 import { prisma } from '@ledgerX/db';
 
 import {
-  createTransaction, // ⬅️ PATCHED: new import from shared DB repo
+  createTransaction,
   reverseTransaction,
-  getAllTransactions, // ✅ Keep if this is still local in services
+  getAllTransactions,
 } from '../services/transactionService';
 
 export const handleCreateTransaction = async (req: Request, res: Response) => {
@@ -45,7 +45,6 @@ export const handleCreateTransaction = async (req: Request, res: Response) => {
       creditCategory,
     });
 
-    // ✅ NEW: Persist using shared database repo
     const created = await createTransaction(tx);
 
     return res.status(201).json({ message: 'Transaction added successfully', transaction: created });
@@ -59,10 +58,9 @@ export const handleGetAllTransactions = async (req: Request, res: Response) => {
   try {
     const { id: userId, role } = req.user!;
     
-    let transactions;
+    let transactions: any[];
     
     if (role === 'ADMIN') {
-      // Admin gets all transactions with user data
       transactions = await prisma.transaction.findMany({
         include: {
           user: {
@@ -78,15 +76,13 @@ export const handleGetAllTransactions = async (req: Request, res: Response) => {
         }
       });
     } else {
-      // Regular users get only their transactions
       transactions = await getAllTransactions(userId);
     }
 
     if (!transactions || transactions.length === 0) {
-      return res.json([]); // Return empty array instead of 404
+      return res.json([]);
     }
 
-    // Enhance transaction data for frontend
     const enhancedTransactions = transactions.map((tx: any) => ({
       id: tx.id,
       description: tx.description || 'No description',
@@ -94,10 +90,10 @@ export const handleGetAllTransactions = async (req: Request, res: Response) => {
       category: tx.category,
       timestamp: tx.timestamp.toISOString(),
       date: tx.timestamp.toISOString().split('T')[0],
-      riskScore: tx.riskScore || Math.floor(Math.random() * 100), // Default risk score
-      status: 'completed', // Default status
-      canReverse: tx.amount < 0 && !tx.parentId, // Can reverse expenses that aren't already reversals
-      hash: `tx_${tx.id.slice(0, 8)}`, // Generate hash from ID
+      riskScore: tx.riskScore || Math.floor(Math.random() * 100),
+      status: 'completed',
+      canReverse: tx.amount < 0 && !tx.parentId,
+      hash: `tx_${tx.id.slice(0, 8)}`,
       user: role === 'ADMIN' ? {
         id: tx.user?.id || tx.userId,
         name: tx.user?.name || 'Unknown User',
@@ -116,7 +112,7 @@ export const handleReverseTransaction = async (req: Request, res: Response) => {
   try {
     const { transactionId } = req.params;
 
-    const reversal = await reverseTransaction(transactionId as string); // ✅ shared DB fn
+    const reversal = await reverseTransaction(transactionId as string);
 
     return res.status(201).json({ message: 'Transaction reversed', reversal });
   } catch (error) {
