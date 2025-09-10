@@ -23,7 +23,7 @@ COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/packages ./packages
 
 # Copy .env file from source
-COPY apps/ledgerX-backend/.env ./.env
+# COPY apps/ledgerX-backend/.env ./.env
 
 ENV NODE_ENV=production
 
