@@ -113,9 +113,9 @@ export async function getAllTransactions(userId: string) {
     },
   });
 
-  return transactions.map((txn: any) => {
-    const debit = txn.ledgerEntries.find((e: any) => e.type === "debit");
-    const credit = txn.ledgerEntries.find((e: any) => e.type === "credit");
+  return transactions.map((txn) => {
+    const debit = txn.ledgerEntries.find((e) => e.type === "debit");
+    const credit = txn.ledgerEntries.find((e) => e.type === "credit");
 
     let reasons: string[] = [];
     if (txn.reasons && txn.reasons.trim() !== "") {
