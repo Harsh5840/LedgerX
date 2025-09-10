@@ -2,27 +2,29 @@
 FROM node:20-alpine AS builder
 WORKDIR /app
 
-# Copy only the necessary files for install/build
+# Copy workspace files
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY packages ./packages
-COPY apps/ledgerX-backend/package.json apps/ledgerX-backend/tsconfig.json ./
-COPY apps/ledgerX-backend/src ./src
+COPY apps/ledgerX-backend ./apps/ledgerX-backend
 
 RUN npm install -g pnpm
 RUN pnpm install
 RUN pnpm --filter @ledgerX/db exec prisma generate
-RUN pnpm --filter ledgerX-backend... build
+RUN pnpm --filter ledgerX-backend build
 
 # Stage 2: Run
 FROM node:20-alpine
 WORKDIR /app
 
-COPY --from=builder /app/packages ./packages
+# Copy built application
+COPY --from=builder /app/apps/ledgerX-backend/dist ./dist
+COPY --from=builder /app/apps/ledgerX-backend/package.json ./package.json
 COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/package.json ./
-COPY --from=builder /app/.env ./
+COPY --from=builder /app/packages ./packages
+
+# Copy .env file from source
+COPY apps/ledgerX-backend/.env ./.env
 
 ENV NODE_ENV=production
 
-CMD ["node", "dist/server.js"] 
+CMD ["node", "dist/server.js"]

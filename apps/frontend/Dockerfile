@@ -1,33 +1,35 @@
-# Stage 1: Build
+# --- Stage 1: Build ---
 FROM node:20-alpine AS builder
 WORKDIR /app
 
+# Copy root manifests for workspace install
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY packages ./packages
-COPY apps/frontend/package.json apps/frontend/tsconfig.json apps/frontend/next.config.mjs ./
-COPY apps/frontend/public ./public
-COPY apps/frontend/styles ./styles
-COPY apps/frontend/app ./app
-COPY apps/frontend/components ./components
-COPY apps/frontend/hooks ./hooks
-COPY apps/frontend/lib ./lib
 
+# Copy frontend app
+COPY apps/frontend ./apps/frontend
+
+# Install pnpm + deps
 RUN npm install -g pnpm
-RUN pnpm install --frozen-lockfile
-RUN pnpm --filter my-v0-project... build
+RUN pnpm install --no-frozen-lockfile
 
-# Stage 2: Run
-FROM node:20-alpine
+# Build Next.js app
+RUN pnpm --filter ledgerX-frontend build
+
+# --- Stage 2: Run ---
+FROM node:20-alpine AS runner
 WORKDIR /app
 
-COPY --from=builder /app/.next ./.next
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/package.json ./
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/next.config.mjs ./
-COPY --from=builder /app/.env ./
-
 ENV NODE_ENV=production
+ENV PORT=3000
+
+# Copy only production artifacts
+COPY --from=builder /app/apps/frontend/.next ./.next
+COPY --from=builder /app/apps/frontend/node_modules ./node_modules
+COPY --from=builder /app/apps/frontend/package.json ./package.json
+COPY --from=builder /app/apps/frontend/public ./public
+COPY --from=builder /app/apps/frontend/next.config.mjs ./next.config.mjs
+
 EXPOSE 3000
 
-CMD ["pnpm", "start"] 
+CMD ["pnpm", "start"]
