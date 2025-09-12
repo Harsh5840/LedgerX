@@ -13,6 +13,8 @@ RUN pnpm --filter @ledgerX/db exec prisma generate
 RUN pnpm -r build
 # Create a pruned deployable bundle with correct node_modules layout
 RUN pnpm deploy --filter ledgerX-backend --prod /app/deploy
+# Ensure Prisma Client is generated inside the deploy bundle so .prisma exists at runtime
+RUN cd /app/deploy && npx prisma generate --schema node_modules/@ledgerX/db/prisma/schema.prisma
 
 # Stage 2: Run
 FROM node:20-alpine
@@ -23,8 +25,5 @@ COPY --from=builder /app/deploy ./
 
 ENV NODE_ENV=production
 EXPOSE 5000
-
-# Generate Prisma Client in the final image so .prisma/client exists at runtime
-RUN npx prisma generate --schema node_modules/@ledgerX/db/prisma/schema.prisma
 
 CMD ["node", "dist/server.js"]
