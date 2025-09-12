@@ -26,5 +26,6 @@ COPY --from=builder /app/packages ./packages
 # COPY apps/ledgerX-backend/.env ./.env
 
 ENV NODE_ENV=production
+EXPOSE 5000
 
 CMD ["node", "dist/server.js"]
