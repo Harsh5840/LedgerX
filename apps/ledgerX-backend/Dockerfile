@@ -24,4 +24,4 @@ COPY --from=builder /app/deploy ./
 ENV NODE_ENV=production
 EXPOSE 5000
 
-CMD ["pnpm", "--filter", "ledgerX-backend", "start"]
+CMD ["node", "dist/server.js"]
