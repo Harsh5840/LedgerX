@@ -11,22 +11,17 @@ RUN npm install -g pnpm
 RUN pnpm install
 RUN pnpm --filter @ledgerX/db exec prisma generate
 RUN pnpm -r build
-RUN pnpm --filter ledgerX-backend build
+# Create a pruned deployable bundle with correct node_modules layout
+RUN pnpm deploy --filter ledgerX-backend --prod /app/deploy
 
 # Stage 2: Run
 FROM node:20-alpine
 WORKDIR /app
 
-# Copy built application
-COPY --from=builder /app/apps/ledgerX-backend/dist ./dist
-COPY --from=builder /app/apps/ledgerX-backend/package.json ./package.json
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/packages ./packages
-
-# Copy .env file from source
-# COPY apps/ledgerX-backend/.env ./.env
+# Copy the deploy bundle
+COPY --from=builder /app/deploy ./
 
 ENV NODE_ENV=production
 EXPOSE 5000
 
-CMD ["node", "dist/server.js"]
+CMD ["node", "apps/ledgerX-backend/dist/server.js"]
