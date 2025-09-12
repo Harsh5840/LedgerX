@@ -10,6 +10,7 @@ COPY apps/ledgerX-backend ./apps/ledgerX-backend
 RUN npm install -g pnpm
 RUN pnpm install
 RUN pnpm --filter @ledgerX/db exec prisma generate
+RUN pnpm -r build
 RUN pnpm --filter ledgerX-backend build
 
 # Stage 2: Run
