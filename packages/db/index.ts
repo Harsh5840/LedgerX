@@ -1,8 +1,8 @@
 // Re-export Prisma client singleton
-export * from './src/client';
+export * from './dist/client';
 
 // Optional: export your own domain-specific types or enums
-export * from './src/types';
+export * from './dist/types';
 
 // Re-export Prisma-generated types and enums
 export * from '@prisma/client';
