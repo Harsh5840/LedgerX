@@ -24,4 +24,7 @@ COPY --from=builder /app/deploy ./
 ENV NODE_ENV=production
 EXPOSE 5000
 
+# Generate Prisma Client in the final image so .prisma/client exists at runtime
+RUN npx prisma generate --schema node_modules/@ledgerX/db/prisma/schema.prisma
+
 CMD ["node", "dist/server.js"]
