@@ -19,14 +19,16 @@ RUN pnpm --filter @ledgerX/db exec prisma generate
 # Build all packages in correct order
 RUN pnpm -r build
 
-# Create production deploy bundle
-RUN pnpm deploy --filter ledgerX-backend --prod /app/deploy
+# Copy the entire workspace to deploy directory (excluding deploy dir)
+RUN mkdir -p /app/deploy
+RUN cp -r packages apps package.json pnpm-lock.yaml pnpm-workspace.yaml /app/deploy/
 
-# Install production dependencies in deploy bundle
+# Install production dependencies
 RUN cd /app/deploy && pnpm install --prod --frozen-lockfile=false
 
-# Generate Prisma client in the deploy bundle
-RUN cd /app/deploy && npx prisma generate --schema node_modules/@ledgerX/db/prisma/schema.prisma
+# Copy the already generated Prisma client from the build stage
+RUN cp -r node_modules/.pnpm/@prisma+client@* /app/deploy/node_modules/.pnpm/ 2>/dev/null || true
+RUN cp -r node_modules/@prisma /app/deploy/node_modules/ 2>/dev/null || true
 
 # Stage 2: Runtime
 FROM node:20-alpine AS runtime
@@ -40,4 +42,4 @@ ENV NODE_ENV=production
 EXPOSE 5000
 
 # Start the application
-CMD ["node", "dist/server.js"]
+CMD ["node", "apps/ledgerX-backend/dist/server.js"]
