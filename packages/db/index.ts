@@ -12,5 +12,9 @@ export * as LedgerRepo from './repo/ledger';
 export * as TransactionRepo from './repo/transaction';
 export * as AccountRepo from './repo/account';
 export { addTransaction } from './repo/ledger';
+export * from './src/client';
+export * from './repo/account';
+export * from './repo/transaction';
+export * from './src/types';
 
 export { prisma } from './src/client';
