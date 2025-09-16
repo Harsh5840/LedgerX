@@ -6,7 +6,6 @@
     },
     "include": [
         "src/**/*",
-        "repo/**/*",
         "index.ts"
     ],
     "exclude": [

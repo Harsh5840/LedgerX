@@ -4,7 +4,7 @@ import {
   addTransactionFromCore,
   reverseTransaction as reverseTxFromDB,
   getAllTransactions as fetchUserTransactions,
-} from "@ledgerX/db/repo/transaction";
+} from "@ledgerX/db/src/transaction";
 
 const MAX_REVERSAL_AGE_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
 

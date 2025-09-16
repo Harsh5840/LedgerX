@@ -1,8 +1,9 @@
 
 
 import { Request, Response } from 'express';
-import { prisma, TransactionRepo } from '@ledgerX/db';
+import { prisma } from '@ledgerX/db';
 import { createTransaction } from '@ledgerX/core';
+import { addTransactionFromCore } from '@ledgerX/db/src/transaction';
 
 export const handleReversal = async (req: Request, res: Response) => {
   try {
@@ -48,7 +49,7 @@ if (!original) {
     reversed.credit.isSuspicious = false;
 
     // Store in DB
-    const tx = await TransactionRepo.addTransactionFromCore({
+    const tx = await addTransactionFromCore({
       ...reversed,
       reasons: 'Reversal',
       parentId: original.transactionId,

@@ -5,7 +5,7 @@ import {
   getAccountById as rawGetAccountById,
   deleteAccount as rawDeleteAccount,
   updateAccountName as rawUpdateAccountName,
-} from "@ledgerX/db/repo/account";
+} from "@ledgerX/db/src/account";
 
 import { z } from "zod";
 

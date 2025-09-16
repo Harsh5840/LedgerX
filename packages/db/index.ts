@@ -8,13 +8,11 @@ export * from './src/types';
 export * from '@prisma/client';
 
 // Grouped and namespaced exports from repositories
-export * as LedgerRepo from './repo/ledger';
-export * as TransactionRepo from './repo/transaction';
-export * as AccountRepo from './repo/account';
-export { addTransaction } from './repo/ledger';
-export * from './src/client';
-export * from './repo/account';
-export * from './repo/transaction';
-export * from './src/types';
+export * as LedgerRepo from './src/ledger';
+export * as TransactionRepo from './src/transaction';
+export * as AccountRepo from './src/account';
+export { addTransaction } from './src/ledger';
+export * from './src/account';
+export * from './src/transaction';
 
 export { prisma } from './src/client';

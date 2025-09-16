@@ -1,4 +1,4 @@
-import { prisma } from "../src/client";
+import { prisma } from "./client";
 import { EntryType, Prisma } from "@prisma/client";
 import { Transaction as LedgerXTransaction } from "@ledgerX/core";
 import { randomUUID } from "crypto";
@@ -74,7 +74,7 @@ export async function reverseTransaction(transactionId: string) {
       riskScore: 0,
       isFlagged: false,
       reasons: "Reversal",
-      parent: { connect: { id: original.id } }, // ✅ Corrected
+      parent: { connect: { id: original.id } },
     },
   });
 
