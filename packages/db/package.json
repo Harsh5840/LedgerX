@@ -6,8 +6,9 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "test": "vitest run",
-    "build": "tsc --build",
+    "build": "prisma generate && tsc --build",
     "dev": "tsc --watch",
+    "postinstall": "prisma generate",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage"
   },
