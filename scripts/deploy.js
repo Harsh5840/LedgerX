@@ -4,7 +4,15 @@ const fs = require('fs');
 
 function exec(command, cwd = process.cwd()) {
   console.log(`Executing: ${command}`);
-  execSync(command, { cwd, stdio: 'inherit' });
+  try {
+    execSync(command, { cwd, stdio: 'inherit' });
+  } catch (error) {
+    // If it's not a copy error of the same file, rethrow
+    if (!error.message?.includes("are the same file")) {
+      throw error;
+    }
+    console.log('Skipping copy of identical file');
+  }
 }
 
 async function deploy() {
@@ -46,15 +54,32 @@ async function deploy() {
   // Copy package files to backend dist
   const packages = ['core', 'db', 'ai'];
   for (const pkg of packages) {
-    const srcDir = path.join(root, 'packages', pkg, 'dist');
+    const pkgDir = path.join(root, 'packages', pkg);
     const destDir = path.join(backendPath, 'node_modules', '@ledgerX', pkg);
     
-    exec(`mkdir -p "${destDir}"`);
-    exec(`cp -r "${srcDir}/." "${destDir}/"`);
+    // Ensure clean destination
+    exec(`rm -rf "${destDir}"`);
+    exec(`mkdir -p "${destDir}/dist/src"`);
+    
+    // Copy dist contents
+    const distSrcDir = path.join(pkgDir, 'dist', 'src');
+    const distDir = path.join(pkgDir, 'dist');
+    
+    if (fs.existsSync(distSrcDir)) {
+      exec(`cp -r "${distSrcDir}/." "${destDir}/dist/src/"`);
+    }
+    
+    // Copy root dist files (index.js, etc.)
+    const distFiles = fs.readdirSync(distDir).filter(f => !f.startsWith('src'));
+    for (const file of distFiles) {
+      exec(`cp "${path.join(distDir, file)}" "${path.join(destDir, 'dist', file)}"`);
+    }
     
     // Copy package.json
-    const pkgJson = path.join(root, 'packages', pkg, 'package.json');
-    exec(`cp "${pkgJson}" "${destDir}/package.json"`);
+    const pkgJson = path.join(pkgDir, 'package.json');
+    if (fs.existsSync(pkgJson)) {
+      exec(`cp "${pkgJson}" "${destDir}/package.json"`);
+    }
   }
 
   // Install production dependencies in backend

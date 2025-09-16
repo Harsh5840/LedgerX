@@ -4,6 +4,10 @@
   "description": "",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": "./dist/index.js",
+    "./src/*": "./dist/src/*.js"
+  },
   "scripts": {
     "test": "vitest run",
     "build": "prisma generate && tsc --build",
