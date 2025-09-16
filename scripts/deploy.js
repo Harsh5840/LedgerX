@@ -59,26 +59,33 @@ async function deploy() {
     
     // Ensure clean destination
     exec(`rm -rf "${destDir}"`);
-    exec(`mkdir -p "${destDir}/dist/src"`);
+    exec(`mkdir -p "${destDir}"`);
     
-    // Copy dist contents
-    const distSrcDir = path.join(pkgDir, 'dist', 'src');
+    // Build the package
+    console.log(`Building ${pkg} package...`);
+    if (pkg === 'db') {
+      exec('pnpm prisma generate', pkgDir);
+    }
+    exec('pnpm build', pkgDir);
+    
+    // Copy the entire dist directory
     const distDir = path.join(pkgDir, 'dist');
-    
-    if (fs.existsSync(distSrcDir)) {
-      exec(`cp -r "${distSrcDir}/." "${destDir}/dist/src/"`);
+    if (fs.existsSync(distDir)) {
+      exec(`cp -r "${distDir}" "${destDir}/"`);
     }
     
-    // Copy root dist files (index.js, etc.)
-    const distFiles = fs.readdirSync(distDir).filter(f => !f.startsWith('src'));
-    for (const file of distFiles) {
-      exec(`cp "${path.join(distDir, file)}" "${path.join(destDir, 'dist', file)}"`);
+    // Copy package.json and other necessary files
+    const filesToCopy = ['package.json', 'README.md'];
+    for (const file of filesToCopy) {
+      const sourcePath = path.join(pkgDir, file);
+      if (fs.existsSync(sourcePath)) {
+        exec(`cp "${sourcePath}" "${destDir}/"`);
+      }
     }
     
-    // Copy package.json
-    const pkgJson = path.join(pkgDir, 'package.json');
-    if (fs.existsSync(pkgJson)) {
-      exec(`cp "${pkgJson}" "${destDir}/package.json"`);
+    // For the db package, ensure Prisma client is available
+    if (pkg === 'db') {
+      exec('cp -r node_modules/.prisma "${destDir}/"', pkgDir);
     }
   }
 
