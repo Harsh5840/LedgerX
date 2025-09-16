@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { createTransaction as buildLedgerTxn } from '@ledgerX/core';
-import { classifyCategory } from '@ledgerX/ai/src/ml';
+import { classifyCategory } from '@ledgerX/ai';
 import { prisma } from '@ledgerX/db';
 
 import {

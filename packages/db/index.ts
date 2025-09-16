@@ -13,3 +13,4 @@ export * as TransactionRepo from './repo/transaction';
 export * as AccountRepo from './repo/account';
 export { addTransaction } from './repo/ledger';
 
+export { prisma } from './src/client';
