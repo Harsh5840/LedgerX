@@ -64,8 +64,20 @@ async function deploy() {
     // Build the package
     console.log(`Building ${pkg} package...`);
     if (pkg === 'db') {
+      // Install prisma dependencies in the backend
+      exec('pnpm add @prisma/client@6.12.0', backendPath);
+      exec('pnpm add -D prisma@6.12.0', backendPath);
+      
+      // Generate Prisma client in the backend's node_modules
       exec('pnpm prisma generate', pkgDir);
+      
+      // Copy the prisma schema and migrations to backend
+      const prismaDir = path.join(pkgDir, 'prisma');
+      const backendPrismaDir = path.join(backendPath, 'prisma');
+      exec(`mkdir -p "${backendPrismaDir}"`);
+      exec(`cp -r "${prismaDir}/." "${backendPrismaDir}/"`);
     }
+    
     exec('pnpm build', pkgDir);
     
     // Copy the entire dist directory
@@ -82,12 +94,11 @@ async function deploy() {
         exec(`cp "${sourcePath}" "${destDir}/"`);
       }
     }
-    
-    // For the db package, ensure Prisma client is available
-    if (pkg === 'db') {
-      exec('cp -r node_modules/.prisma "${destDir}/"', pkgDir);
-    }
   }
+  
+  // Install production dependencies in backend
+  console.log('Installing backend production dependencies...');
+  exec('pnpm install --prod', backendPath);
 
   // Install production dependencies in backend
   console.log('Installing backend production dependencies...');
