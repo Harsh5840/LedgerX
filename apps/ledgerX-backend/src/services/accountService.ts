@@ -1,11 +1,12 @@
-import { Account, AccountType } from "@ledgerX/db";
-import {
+import { 
+  Account, 
+  AccountType,
   createAccount as rawCreateAccount,
   getUserAccounts as rawGetUserAccounts,
   getAccountById as rawGetAccountById,
   deleteAccount as rawDeleteAccount,
-  updateAccountName as rawUpdateAccountName,
-} from "@ledgerX/db/src/account";
+  updateAccountName as rawUpdateAccountName
+} from "@ledgerX/db";
 
 import { z } from "zod";
 
