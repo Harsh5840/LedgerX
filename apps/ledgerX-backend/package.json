@@ -15,6 +15,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "debug": "^4.3.4",
     "@ledgerX/ai": "workspace:*",
     "@ledgerX/core": "workspace:*",
     "@ledgerX/db": "workspace:*",
