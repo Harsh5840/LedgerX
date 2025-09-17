@@ -2,8 +2,12 @@
   "extends": "@repo/typescript-config/base.json",
   "compilerOptions": {
     "outDir": "./dist",
-    "rootDir": "./src"
+    "rootDir": ".",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "target": "ESNext",
+    "composite": true
   },
-  "include": ["src/**/*"],
+  "include": ["index.ts", "src/**/*"],
   "exclude": ["node_modules", "dist", "src/**/*.test.ts", "src/**/*.spec.ts", "src/__tests__/**/*"]
 }
