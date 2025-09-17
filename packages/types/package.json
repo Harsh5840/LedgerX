@@ -2,10 +2,8 @@
   "name": "@ledgerX/types",
   "version": "1.0.0",
   "description": "Shared types for LedgerX",
-  "main": "./dist/index.js",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsc --build",
     "dev": "tsc --watch",
